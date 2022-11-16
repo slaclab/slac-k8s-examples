@@ -1,0 +1,44 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: template-app
+  labels:
+    role: template-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      role: template-app
+  template:
+    metadata:
+      labels:
+        role: template-app
+    spec:
+      containers:
+      - name: template-app
+        image: busybox:latest
+        imagePullPolicy: Always
+        command: [ "bash", "-c", "sleep infinity" ]
+        volumeMounts:
+        - name: s3df-data
+          mountPath: /s3df
+          readOnly: true 
+      volumes:
+      - name: s3df-data 
+        persistentVolumeClaim:
+          claimName: s3df-data
+---
+
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: s3df-data
+spec:
+  # Define storageClassName to override default storageClass on cluster (e.g., weka)
+  #storageClassName: weka-data
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
