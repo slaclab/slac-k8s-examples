@@ -1,0 +1,4 @@
+namespace: cnpg-system
+
+resources:
+- cnpg-operator.yaml

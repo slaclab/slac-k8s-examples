@@ -1,0 +1,5 @@
+namespace: app-template
+
+resources:
+  - ns.yaml
+  - app-template.yaml

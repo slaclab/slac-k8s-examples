@@ -1,0 +1,5 @@
+namespace: template-app
+
+resources:
+  - ns.yaml
+  - template-app.yaml

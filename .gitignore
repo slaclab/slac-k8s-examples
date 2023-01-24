@@ -1,2 +1,2 @@
 *.swp
-etc/.secrets/*
+*etc/.secrets/*

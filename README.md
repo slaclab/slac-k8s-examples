@@ -20,9 +20,8 @@ Configuration management is handled by the Kubernetes-native [Kustomize](https:/
 ```
 <application_root>
    \__ kubernetes
-     \__ base/kustomization.yaml
      |__ overlays
-       \__ dev/kustomization.yaml    # inherit and override configurations from base/kustomization.yaml
+       \__ dev/kustomization.yaml    # (May inherit and override configurations from ../../base/kustomization.yaml)
        |__ stage/kustomization.yaml  # "
        |__ prod/kustomization.yaml   # "
 ```

@@ -19,24 +19,23 @@ spec:
       - name: template-app
         image: busybox:latest
         imagePullPolicy: Always
-        command: [ "bash", "-c", "sleep infinity" ]
+        command: [ "sh", "-c", "sleep infinity" ]
         volumeMounts:
-        - name: s3df-data
-          mountPath: /s3df
-          readOnly: true 
+        - name: template-app-data
+          mountPath: /data
+          readOnly: true
       volumes:
-      - name: s3df-data 
+      - name: template-app-data
         persistentVolumeClaim:
-          claimName: s3df-data
+          claimName: template-app-data
 ---
 
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: s3df-data
+  name: template-app-data
 spec:
   # Define storageClassName to override default storageClass on cluster (e.g., weka)
-  #storageClassName: weka-data
   accessModes:
   - ReadWriteMany
   resources:

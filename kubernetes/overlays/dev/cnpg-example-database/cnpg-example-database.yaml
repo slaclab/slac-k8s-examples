@@ -41,10 +41,10 @@ spec:
 apiVersion: postgresql.cnpg.io/v1
 kind: Pooler
 metadata:
-  name: template-app-pooler-rw
+  name: app-template-pooler-rw
 spec:
   cluster:
-    name: template-app
+    name: app-template
   instances: 3
   type: rw
 

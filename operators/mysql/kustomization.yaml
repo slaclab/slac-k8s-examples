@@ -1,0 +1,11 @@
+namespace: mysql-operator
+
+resources:
+- ns.yaml
+- deploy-crds.yaml
+- deploy-operator.yaml 
+
+secretGenerator:
+- name: mysql
+  files:
+  - etc/.secrets/root-password

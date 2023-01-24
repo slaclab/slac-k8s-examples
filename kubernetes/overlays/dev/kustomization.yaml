@@ -1,0 +1,12 @@
+namespace: app-template
+
+resources:
+- app-template/ns.yaml
+- app-template/app-template.yaml
+#- cnpg-example-database/cnpg-example-database.yaml
+#- helm.yaml
+
+secretGenerator:
+- name: app-template
+  files:
+  - etc/.secrets/example-secret
