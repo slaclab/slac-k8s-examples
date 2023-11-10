@@ -1,0 +1,42 @@
+###
+# node local storage example
+###
+#
+# There may be cases where the application requires higher performance access to storage at the expense of resilience. In such cases it is highly recommended that the application is capable of some form of application level data resilience (either duplication/replication). Backups are probably not sufficient.
+# In these cases, we provide kubernetes StorageClasses that facilitate this use case. Note that you should talk with us as the specific example below may not work for you as we base these StorageClasses on functional need and do not offer it as a general service for everyboday.
+# Technically, this is implemented as a zfs filesystem on the node. As storage is node-local, careful consideration of the service topology and expected application availability should be factored into your decision to use this. We use the zfs-localpv provisioner and define StorageClasses per functional use. As such, you will be provided a specific `storageClassName` for your application.
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: example-pvc
+spec:
+  storageClassName: "zfs--rubin-efd"
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Ti
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: example-pod
+spec:
+  volumes:
+    - name: local-storage
+      persistentVolumeClaim:
+        claimName: example-pvc
+  containers:
+    - name: web-server
+      image: nginx
+      ports:
+        - containerPort: 80
+          name: "http-server"
+      volumeMounts:
+        - mountPath: "/usr/share/nginx/html"
+          name: local-storage
+
+  
