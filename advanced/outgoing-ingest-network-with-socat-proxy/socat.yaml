@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: socat-example
+  labels:
+    app: outgoing-ingest-proxy
+    dest: db-lhn.cp.lsst.org
+spec:
+  selector:
+    matchLabels:
+      app: outgoing-ingest-proxy
+      dest: db-lhn.cp.lsst.org
+  template:
+    metadata:
+      labels:
+        app: outgoing-ingest-proxy
+        dest: db-lhn.cp.lsst.org
+      annotations:
+        k8s.v1.cni.cncf.io/networks: '[{ "name": "sdf-rubin-pub","namespace": "multus-system","ips": [ "134.79.22.148/26" ],"gateway": [ "134.79.22.129" ] }]'
+    spec:
+      # it's annoying that we need this also...
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: edu.stanford.slac.sdf.networking/vlan857
+                operator: In
+                values:
+                - 'true'
+      tolerations:
+      - key: "node-role.kubernetes.io/ext-load-balancer"
+        operator: "Exists"
+        effect: "NoSchedule"
+      containers:
+      - args:
+        - -d
+        - -d
+        - TCP4-LISTEN:$(LISTEN_PORT),fork,reuseaddr
+        - TCP4:$(DEST_ADDRESS):$(DEST_PORT)
+        env:
+        - name: LISTEN_PORT
+          value: "5432"
+        - name: DEST_ADDRESS
+          value: sdfiana006.sdf.slac.stanford.edu
+          #db-lhn.cp.lsst.org
+        - name: DEST_PORT
+          value: "5432"
+        image: alpine/socat
+        imagePullPolicy: Always
+        name: socat
+        ports:
+        - containerPort: 5432
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 20m
+            memory: 100Mi
+          requests:
+            cpu: 10m
+            memory: 10Mi
+        securityContext: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: outgoing-ingest-proxy
+spec:
+  selector:
+    app: outgoing-ingest-proxy
+    dest: db-lhn.cp.lsst.org
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432
+

@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: application-with-dns-override
+  labels:
+    app: netshoot
+spec:
+  selector:
+    matchLabels:
+      app: netshoot
+  template:
+    metadata:
+      labels:
+        app: netshoot
+    spec:
+      containers:
+      - image: nicolaka/netshoot
+        name: netshoot
+        command:
+        - "/bin/sh"
+        - "-ec"
+        - "while :; do echo '.'; sleep 6 ; done"
+      dnsPolicy: ClusterFirst
+      hostAliases:
+      - hostnames:
+        - db-lhn.cp.lsst.org
+        ip: 10.106.23.190

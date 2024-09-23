@@ -1,0 +1,5 @@
+namespace: outgoing-ingest-proxy
+
+resources:
+- socat.yaml
+- deployment.yaml
