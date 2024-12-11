@@ -1,0 +1,73 @@
+# Source: mariadb-operator/templates/webhook-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mariadb-operator-webhook
+  labels:
+    
+    helm.sh/chart: mariadb-operator-0.19.0
+    app.kubernetes.io/name: mariadb-operator-webhook
+    app.kubernetes.io/instance: mariadb-operator
+    
+    app.kubernetes.io/version: "v0.0.19"
+    
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      
+      app.kubernetes.io/name: mariadb-operator-webhook
+      app.kubernetes.io/instance: mariadb-operator
+  template:
+    metadata:
+      
+      labels:
+        
+        app.kubernetes.io/name: mariadb-operator-webhook
+        app.kubernetes.io/instance: mariadb-operator
+    spec:
+      serviceAccountName: mariadb-operator-webhook
+      automountServiceAccountToken: true
+      
+      
+      
+      
+      hostNetwork: false
+      containers:
+        - image: "docker-registry3.mariadb.com/mariadb-operator/mariadb-operator:v0.0.19"
+          imagePullPolicy: IfNotPresent
+          name: webhook
+          args:
+            - webhook
+            - --cert-dir=/tmp/k8s-webhook-server/serving-certs
+            - --port=9443
+            - --metrics-addr=:8080
+            - --health-addr=:8081
+            - --log-level=INFO
+          ports:
+            - containerPort: 9443
+              protocol: TCP
+              name: https
+            - containerPort: 8080
+              protocol: TCP
+              name: metrics
+            - containerPort: 8081
+              protocol: TCP
+              name: health
+          volumeMounts:
+            - mountPath: /tmp/k8s-webhook-server/serving-certs
+              name: cert
+              readOnly: true
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          
+          
+      volumes:
+        - name: cert
+          secret:
+            defaultMode: 420
+            secretName: mariadb-operator-webhook-default-cert

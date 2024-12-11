@@ -1,0 +1,21 @@
+# Source: mariadb-operator/templates/servicemonitor.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: mariadb-operator-metrics
+  labels:
+    
+    helm.sh/chart: mariadb-operator-0.19.0
+    app.kubernetes.io/name: mariadb-operator
+    app.kubernetes.io/instance: mariadb-operator
+    app.kubernetes.io/version: "v0.0.19"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  ports:
+    - port: 8080
+      protocol: TCP
+      name: metrics
+  selector:
+    
+    app.kubernetes.io/name: mariadb-operator
+    app.kubernetes.io/instance: mariadb-operator
