@@ -1,0 +1,5 @@
+namespace: gpu-example-app
+
+resources:
+  - ns.yaml
+  - gpu-example-app.yaml
