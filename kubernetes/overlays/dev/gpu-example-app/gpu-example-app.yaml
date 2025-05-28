@@ -1,0 +1,53 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gpu-example-app
+  labels:
+    app: gpu-example-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gpu-example-app
+  template:
+    metadata:
+      labels:
+        app: gpu-example-app
+    spec: 
+      tolerations:
+      - operator: Exists
+      restartPolicy: Always
+      containers:
+      - name: gpu-example-app
+        image: nvcr.io/nvidia/k8s/cuda-sample:vectoradd-cuda11.7.1-ubuntu20.04
+        imagePullPolicy: IfNotPresent
+        command: [ "sh", "-c", "sleep infinity" ]
+      #  volumeMounts:
+      #  - name: gpu-example-app-data
+      #    mountPath: /data
+      #    readOnly: true
+        resources:
+          limits:
+            cpu: 400m
+            memory: 2Gi
+            nvidia.com/gpu: 1
+#      volumes:
+#      - name: gpu-example-app-data
+#        persistentVolumeClaim:
+#          claimName: gpu-example-app-data
+
+#---
+#
+#kind: PersistentVolumeClaim
+#apiVersion: v1
+#metadata:
+#  name: gpu-example-app-data
+#spec:
+#  # Define storageClassName to override default storageClass on cluster
+#  storageClassName: wekafs--sdf-k8s01
+#  accessModes:
+#  - ReadWriteMany
+#  resources:
+#    requests:
+#      storage: 1Gi

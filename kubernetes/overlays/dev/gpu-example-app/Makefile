@@ -1,0 +1,2 @@
+apply:
+	kubectl apply -k .
