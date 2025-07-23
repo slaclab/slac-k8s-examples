@@ -7,6 +7,7 @@ ensure-context:
 	if [ '$(shell kubectl config current-context)' != $(KUBECTL_DEPLOY_CONTEXT) ]; then echo "Configured deployment context inccorect; expecting $(KUBECTL_DEPLOY_CONTEXT)."; exit 1; fi
 
 resource:
+        mkdir -p resource crd
 	rm -rf resources/* crd/*
 	cat kustomization.yaml.tmpl > kustomization.yaml
 	curl -sL https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/release-${CNPG_VERSION_MAJOR}/releases/cnpg-${CNPG_VERSION_MAJOR}.${CNPG_VERSION_MINOR}.yaml | kubectl slice -o resources/
