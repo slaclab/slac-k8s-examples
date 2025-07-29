@@ -1,0 +1,15 @@
+
+resources:
+- ns.yaml
+# cnpg
+- cnpg-example-database.yaml
+
+secretGenerator:
+- name: usdf-butler-exampledb-creds
+  options:
+    disableNameSuffixHash: true
+  files:
+  - etc/.secrets/username
+  - etc/.secrets/password
+
+namespace: example-ns

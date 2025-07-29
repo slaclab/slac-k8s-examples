@@ -1,89 +1,73 @@
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
-  name: postgres
+  name: example-db
+  namespace: example-ns
 spec:
   instances: 2
   primaryUpdateStrategy: unsupervised
+  enablePDB: false
 
   bootstrap:
     initdb:
-      database: example-db
-      owner: example-admin
+      database: example
+      owner: app
       secret:
-        name: postgres
+        name: usdf-butler-exampledb-creds
+      postInitSQL:
+        - "CREATE EXTENSION pg_sphere;"
+  
+  imageName:  ghcr.io/lsst-sqre/cnpg-postgres-images:16.3
+  inheritedMetadata:
+    annotations:
+      prometheus.io/scrape: 'true' 
+
+  monitoring:
+    enablePodMonitor: true
 
   nodeMaintenanceWindow:
-    inProgress: false
     reusePVC: true
 
   postgresql:
     parameters:
-      shared_buffers: 4GB
-      pg_stat_statements.max: "10000"
-      pg_stat_statements.track: all
-
+        dynamic_shared_memory_type: posix
+        log_destination: csvlog
+        log_directory: /controller/log
+        log_disconnections: "off"
+        log_duration: "off"
+        log_filename: postgres
+        log_min_duration_statement: 250ms
+        log_rotation_age: "0"
+        log_rotation_size: "0"
+        log_statement: "none"
+        log_temp_files: "1"
+        log_truncate_on_rotation: "false"
+        logging_collector: "on"
+        maintenance_work_mem: 12GB
+        max_connections: "2000"
+        max_parallel_workers: "32"
+        max_replication_slots: "32"
+        max_wal_size: 32GB
+        max_worker_processes: "32"
+        min_wal_size: 16GB
+        pg_stat_statements.track: "none"
+        random_page_cost: "1.1"
+        shared_buffers: 8GB
+        wal_keep_size: 16GB
+        wal_receiver_timeout: 5s
+        wal_sender_timeout: 5s
+        work_mem: 320MB
+        max_slot_wal_keep_size: "32GB"
+        wal_compression: "off"
+       
   resources:
     requests:
       memory: 16Gi
       cpu: 4
     limits:
       memory: 32Gi
-      cpu: 8
+      cpu: 8 
 
   storage:
     storageClass: wekafs--sdf-k8s01
-    size: 1.0Ti
-
-
----
-
-apiVersion: postgresql.cnpg.io/v1
-kind: Pooler
-metadata:
-  name: app-template-pooler-rw
-spec:
-  cluster:
-    name: app-template
-  instances: 3
-  type: rw
-
-  pgbouncer:
-    poolMode: transaction
-    parameters:
-      max_client_conn: "1000"
-      default_pool_size: "10"
-      log_connections: "1"
-      log_disconnections: "1"
-      idle_transaction_timeout: "0"
-      server_idle_timeout: "0"
-
-  template:
-    metadata:
-      labels:
-        app: pooler
-    
-    spec:
-      containers:
-      - name: pgbouncer
-        resources:
-          requests:
-            cpu: "0.1"
-            memory: 100Mi
-          limits:
-            cpu: "0.5"
-            memory: 500Mi
-
-      affinity:
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-          - labelSelector:
-              matchExpressions:
-              - key: app
-                operator: In
-                values:
-                - pooler
-            topologyKey: "kubernetes.io/hostname"
-
-
----
+    size: 100Gi
