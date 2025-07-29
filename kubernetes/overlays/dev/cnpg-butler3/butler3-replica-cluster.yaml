@@ -46,7 +46,6 @@ spec:
       log_min_duration_statement: 250ms
       idle_in_transaction_session_timeout: "14400000"
       log_statement: none
-      log_statement: all
       log_temp_files: "1"
       maintenance_work_mem: 2GB
       max_connections: "3000"
@@ -59,7 +58,6 @@ spec:
       work_mem: 160MB
       statement_timeout: "14400000"
       wal_keep_size: 64GB
-      shared_buffers: "1GB"
 
   resources:
     requests:
