@@ -1,14 +1,10 @@
 
 resources:
 - ns.yaml
-- cnpg-butler3-database.yaml
-- cnpg-butler3-pooler.yaml
-- backup.yaml
-- cnpg-butler3-pooler-service.yaml
-- cnpg-butler3-db-svc.yaml
+- butler3-replica-cluster.yaml
 
 secretGenerator:
-- name: usdf-butler-butler-creds
+- name: butler3-replica-creds
   options:
     disableNameSuffixHash: true
   files:
@@ -21,4 +17,4 @@ secretGenerator:
   - ACCESS_KEY_ID=etc/.secrets/client-id
   - ACCESS_SECRET_KEY=etc/.secrets/client-secret
 
-namespace: prod2
+namespace: cnpg-butler3-replica

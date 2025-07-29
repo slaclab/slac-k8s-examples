@@ -1,0 +1,73 @@
+# Replica Cluster manifest ───────────────────────────────────────
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: butler3-replica                    # <— new cluster name
+  namespace: cnpg-butler3
+spec:
+  # ---- PostgreSQL image (new major) ----
+  imageName: ghcr.io/lsst-sqre/cnpg-postgres-images:14.5
+  instances: 1                        # number of pods
+  storage:
+    size: 4000Gi
+
+  # ---------- BOOTSTRAP FROM SOURCE ----------
+  bootstrap:
+    recovery:                         # “clone” via pg_basebackup + stream
+      source: butler3-primary         # must match externalClusters[].name
+
+  # ---------- CONNECTION DETAILS FOR SOURCE ----------
+  externalClusters:
+  - name: butler3-primary             # logical name referenced above
+    connectionParameters:
+      host: butler3-primary           # Service pointing to primary
+      user: replica                   # role with REPLICATION privilege
+      dbname: postgres                # used only for base backup
+      port: "5432"
+    password:
+      name: butler3-replica-creds
+      key: password
+
+  # (Optional) tune replication slot or TLS
+  #   replicationSlot:
+  #     name: orders_to_v16
+  #   ssl:
+  #     # sslMode: verify-full
+  #     rootCertificate:
+  #       name: ca-secret
+  #       key: ca.crt
+
+  # ---- (Optional) post-bootstrap SQL or parameters --------------
+  postgresql:
+    parameters:
+      checkpoint_timeout: "3600"
+      log_disconnections: "on"
+      log_duration: "on"
+      log_min_duration_statement: 250ms
+      idle_in_transaction_session_timeout: "14400000"
+      log_statement: none
+      log_statement: all
+      log_temp_files: "1"
+      maintenance_work_mem: 2GB
+      max_connections: "3000"
+      max_wal_size: 256GB
+      min_wal_size: 64GB
+      pg_stat_statements.max: "10000"
+      pg_stat_statements.track: all
+      random_page_cost: "1.1"
+      shared_buffers: 16GB
+      work_mem: 160MB
+      statement_timeout: "14400000"
+      wal_keep_size: 64GB
+      shared_buffers: "1GB"
+
+  resources:
+    requests:
+      memory: 64Gi
+      cpu: 8
+    limits:
+      memory: 128Gi
+      cpu: 16
+
+  monitoring:
+    enablePodMonitor: true
