@@ -29,3 +29,6 @@ dump:
 
 apply: 
 	kubectl apply -k .
+
+diff:
+	kubectl diff -k .
