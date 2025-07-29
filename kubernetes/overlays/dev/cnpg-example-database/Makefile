@@ -1,4 +1,4 @@
-SECRET_PATH ?= secret/rubin/usdf-example-ns/exampledb
+SECRET_PATH ?= secret/slac-k8s-exmaple/cnpg-example/exampledb
 
 get-secrets-from-vault:
 	mkdir -p etc/.secrets/

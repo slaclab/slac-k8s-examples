@@ -2,7 +2,7 @@ apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
   name: example-db
-  namespace: example-ns
+  namespace: cnpg-example
 spec:
   instances: 2
   primaryUpdateStrategy: unsupervised
@@ -13,11 +13,11 @@ spec:
       database: example
       owner: app
       secret:
-        name: usdf-butler-exampledb-creds
+        name: exampledb-creds
       postInitSQL:
         - "CREATE EXTENSION pg_sphere;"
   
-  imageName:  ghcr.io/lsst-sqre/cnpg-postgres-images:16.3
+  imageName:  ghcr.io/lsst-sqre/cnpg-postgres-images:17.5
   inheritedMetadata:
     annotations:
       prometheus.io/scrape: 'true' 

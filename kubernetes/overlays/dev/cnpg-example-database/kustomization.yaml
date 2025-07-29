@@ -5,11 +5,11 @@ resources:
 - cnpg-example-database.yaml
 
 secretGenerator:
-- name: usdf-butler-exampledb-creds
+- name: exampledb-creds
   options:
     disableNameSuffixHash: true
   files:
   - etc/.secrets/username
   - etc/.secrets/password
 
-namespace: example-ns
+namespace: cnpg-example
