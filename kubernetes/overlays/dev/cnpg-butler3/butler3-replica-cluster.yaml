@@ -1,17 +1,14 @@
-# Replica Cluster manifest ───────────────────────────────────────
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
   name: butler3-replica                    # <— new cluster name
   namespace: cnpg-butler3-replica
 spec:
-  # ---- PostgreSQL image (new major) ----
   imageName: ghcr.io/lsst-sqre/cnpg-postgres-images:14.5
   instances: 1                        # number of pods
   storage:
     size: 4000Gi
 
-  # ---------- BOOTSTRAP FROM SOURCE ----------
   bootstrap:
     pg_basebackup:                    # “clone” via pg_basebackup + stream
       source: butler3-primary         # must match externalClusters[].name
@@ -20,13 +17,11 @@ spec:
     enabled: true
     source: butler3-primary
 
-  # ---------- CONNECTION DETAILS FOR SOURCE ----------
   externalClusters:
   - name: butler3-primary             # logical name referenced above
     connectionParameters:
       host: usdf-butler3-db-svc.slac.stanford.edu    # Service pointing to primary
       user: streaming_replica                        # role with REPLICATION privilege
-      sslmode: verify-full
     sslKey:
       name: butler3-primary-replication
       key: tls.key
@@ -37,7 +32,6 @@ spec:
       name: butler3-primary-ca
       key: ca.crt
 
-  # ---- (Optional) post-bootstrap SQL or parameters --------------
   postgresql:
     parameters:
       checkpoint_timeout: "3600"
