@@ -1,4 +1,4 @@
-SECRET_PATH ?= secret/rubin/usdf-butler/postgres
+SECRET_PATH ?= secret/rubin/usdf-butler/prod2/butler3-replicator
 
 get-secrets-from-vault:
 	mkdir -p etc/.secrets/
@@ -16,5 +16,3 @@ run-kustomize:
 dump: get-secrets-from-vault run-kustomize clean-secrets
 
 apply: get-secrets-from-vault run-apply clean-secrets
-
-
