@@ -1,5 +1,5 @@
 # serviceMonitor
-Kubernetes resource that allows Prometheus to scrape a disired Service.
+Kubernetes resource that allows Prometheus to scrape a desired Service.
 
 ## Description
 This folder contains the neccessary resources to deploy and monitor an example application:
