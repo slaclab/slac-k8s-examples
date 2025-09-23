@@ -1,0 +1,48 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: epics-example-app
+spec:
+  selector:
+    matchLabels:
+      app: epics-example-app
+  template:
+    metadata:
+      annotations:
+        k8s.v1.cni.cncf.io/networks: '[
+                { 
+                  "name": "multus-static-ip-pool",
+                  "namespace": "multus-system",
+                  "ips": [ "0.0.0.0/24" ],
+                  "gateway": [ "192.168.0.1" ]
+                }
+          ]'
+      labels:
+        app: epics-test
+    spec:
+      nodeSelector:
+        edu.stanford.slac.sdf.k8s.networking.multus: 'enable'
+      tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/ext-load-balancer
+      containers:
+      - name: epics-example-app
+        image: ghcr.io/epics-containers/epics-base-runtime:7.0.8ad3
+        imagePullPolicy: Always
+        command: [ "/bin/bash", "-c", "--" ]
+        args: [ "caRepeater && sleep infinity" ]
+        envFrom:
+        - configMapRef:
+            name: epics-config-env
+        volumeMounts:
+        - name: epics-config-volume
+          mountPath: /etc/epics-config-env
+        resources:
+          limits:
+            memory: 8Gi
+            cpu: 4000m
+      volumes:
+        - name: epics-config-volume
+          configMap:
+            name: epics-config-env
