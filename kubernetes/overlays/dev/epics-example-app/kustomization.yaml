@@ -1,0 +1,10 @@
+namespace: epics-test
+
+resources:
+  - ns.yaml
+  - epics-example-app.yaml
+
+configMapGenerator:
+  - name: epics-config-env
+    envs:
+    - epics-config.env
