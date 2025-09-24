@@ -14,7 +14,7 @@ spec:
                 { 
                   "name": "multus-static-ip-pool",
                   "namespace": "multus-system",
-                  "ips": [ "0.0.0.0/24" ],
+                  "ips": [ "192.168.1.10/24" ],
                   "gateway": [ "192.168.0.1" ]
                 }
           ]'

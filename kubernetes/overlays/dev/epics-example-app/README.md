@@ -39,7 +39,7 @@ at the time of deployment to make them available in the container, such as via a
                 { 
                   "name": "multus-static-ip-pool", # name of Multus networkAttachmentDefinition
                   "namespace": "multus-system",
-                  "ips": [ "0.0.0.0/24" ], # static IP provisioned from Multus IP pool
+                  "ips": [ "192.168.1.10/24" ], # static IP provisioned from Multus IP pool
                   "gateway": [ "192.168.0.1" ] # default network gateway
                 }
           ]'
