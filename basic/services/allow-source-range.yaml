@@ -4,7 +4,8 @@ kind: Service
 metadata:
   name: metallb-vlan832-2
   annotations:
-    metallb.universe.tf/address-pool: sdf-ad-ingest
+    # a valid address-pool is required by policy
+    metallb.io/address-pool: sdf-ad-ingest
 spec:
   ports:
   - name: pgbouncer
@@ -13,6 +14,8 @@ spec:
   selector:
     app: metallb-vlan832-2
   type: LoadBalancer
+  # avoid Nodeports, required by policy
+  allocateLoadBalancerNodePorts: false
   loadBalancerSourceRanges:
   - 134.79.0.0/16
   - 172.16.0.0/8
