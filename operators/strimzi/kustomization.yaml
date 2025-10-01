@@ -1,9 +1,6 @@
-
-namespace: kafka
+namespace: strimzi-kafka-operator
 
 resources:
 - ns.yaml
-- strimzi-operator.yaml
-- kafka-persistent-single.yaml
-#- kafka-yee-cluster.yaml
-#- kafka-yee-users.yaml
+- strimzi-crds.yaml
+- strimzi-kafka-operator.yaml
