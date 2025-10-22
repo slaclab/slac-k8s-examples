@@ -1,0 +1,11 @@
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: Database
+metadata:
+  name: name_mariadb_db_resource
+  namespace: prod
+spec:
+  mariaDbRef:
+    name: name_mariadb_db_resource    # must match MariaDB.metadata.name
+  name: name_database # actual database in use
+  characterSet: utf8
+  collate: utf8_general_ci

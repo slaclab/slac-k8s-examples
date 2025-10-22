@@ -1,0 +1,26 @@
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: User
+metadata:
+  name: name_mariadb_db_resource
+  namespace: prod
+spec:
+  mariaDbRef:
+    name: name_mariadb_db_resource
+  passwordSecretKeyRef:
+    name: user_name
+    key: user_name_password
+  maxUserConnections: 800
+
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: User
+metadata:
+  name: name_mariadb_db_resource-monitoring
+  namespace: prod
+spec:
+  name: monitoring
+  mariaDbRef:
+    name: name_mariadb_db_resource
+  passwordSecretKeyRef:
+    name: name-secret-users
+    key: monitoring_password

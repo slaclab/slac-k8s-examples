@@ -1,0 +1,19 @@
+# Source: mariadb-operator/templates/webhook/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: mariadb-operator-mmontes-webhook
+  labels:
+    helm.sh/chart: mariadb-operator-0.38.1
+    app.kubernetes.io/name: mariadb-operator-webhook
+    app.kubernetes.io/instance: mariadb-operator-mmontes
+    app.kubernetes.io/version: "0.38.1"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  ports:
+    - port: 443
+      protocol: TCP
+      targetPort: 9443
+  selector:
+    app.kubernetes.io/name: mariadb-operator-webhook
+    app.kubernetes.io/instance: mariadb-operator-mmontes

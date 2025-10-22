@@ -1,0 +1,26 @@
+resources:
+- ns.yaml
+- database-resource.yaml
+- mariadb.yaml
+- users.yaml
+- backup.yaml
+- grant.yaml
+
+secretGenerator:
+- name: name-secret-users
+  options:
+    disableNameSuffixHash: true
+  files:
+  - etc/.secrets/user_password
+  - etc/.secrets/root_password
+  - etc/.secrets/monitoring_password
+  - etc/.secrets/other_password
+
+- name: name-secret-s3
+  options:
+    disableNameSuffixHash: true
+  files:
+  - etc/.secrets/access_key
+  - etc/.secrets/secret_key
+
+namespace: prod
