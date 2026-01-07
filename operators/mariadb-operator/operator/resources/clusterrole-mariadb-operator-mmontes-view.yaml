@@ -1,0 +1,12 @@
+# Source: mariadb-operator/templates/operator/rbac-user.yaml
+# the mariadb-view ClusterRole allows viewing all k8s.mariadb.com resources
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: mariadb-operator-mmontes-view
+  labels:
+    rbac.authorization.k8s.io/aggregate-to-view: "true"
+rules:
+- apiGroups: ["k8s.mariadb.com"]
+  resources: ["*"]
+  verbs: ["get", "list", "watch"]

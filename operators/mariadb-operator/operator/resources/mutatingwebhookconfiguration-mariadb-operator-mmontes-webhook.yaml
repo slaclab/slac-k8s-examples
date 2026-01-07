@@ -1,0 +1,34 @@
+# Source: mariadb-operator/templates/webhook/config.yaml
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: mariadb-operator-mmontes-webhook
+  labels:
+    helm.sh/chart: mariadb-operator-0.38.1
+    app.kubernetes.io/name: mariadb-operator-webhook
+    app.kubernetes.io/instance: mariadb-operator-mmontes
+    app.kubernetes.io/version: "0.38.1"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    k8s.mariadb.com/webhook: ""
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: mariadb-operator-mmontes-webhook
+      namespace: mariadb-system
+      path: /mutate-k8s-mariadb-com-v1alpha1-mariadb
+  failurePolicy: Fail
+  name: mmariadb-v1alpha1.kb.io
+  rules:
+  - apiGroups:
+    - k8s.mariadb.com
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - mariadbs
+  sideEffects: None

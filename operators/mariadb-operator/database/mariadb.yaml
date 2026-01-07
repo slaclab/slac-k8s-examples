@@ -1,0 +1,81 @@
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: MariaDB
+metadata:
+  name: name_mariadb_db_resource
+  namespace: prod
+spec:
+  rootPasswordSecretKeyRef:
+    name: root_user_name #mariadb needs root user defined
+    key: root_password
+
+  username: user_name
+  passwordSecretKeyRef:
+    name: user_name
+    key: user_name_password
+
+  database: name_database
+
+  image: docker-registry1.mariadb.com/library/mariadb:11.4.5
+  imagePullPolicy: IfNotPresent
+  port: 3306
+
+  storage:
+    size: 500Gi
+    storageClassName: storageclass_type
+    resizeInUseVolumes: true
+    volumeClaimTemplate:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 500Gi
+    waitForVolumeResize: true
+
+
+  service:
+    metadata:
+      annotations:
+        metallb.io/address-pool: pool
+    allocateLoadBalancerNodePorts: false
+    type: LoadBalancer
+  serviceAccountName: name-service
+
+  resources:
+    requests:
+      cpu: 4
+      memory: 64Gi
+    limits:
+      cpu: 16
+      memory: 96Gi
+
+  myCnf: |
+    [mariadb]
+    bind-address=*
+    default_storage_engine=InnoDB
+    binlog_format=row
+    innodb_autoinc_lock_mode=2
+    innodb_buffer_pool_size=1024M
+    max_allowed_packet=256M
+
+  myCnfConfigMapKeyRef:
+    name: mariadb
+    key: my.cnf
+
+  metrics:
+    enabled: true
+    exporter:
+      image: prom/mysqld-exporter:v0.17.2
+      resources:
+        requests:
+          cpu: 500m
+          memory: 256Mi
+        limits:
+          cpu: 1
+          memory: 1Gi
+      port: 9104
+      affinity:
+        antiAffinityEnabled: true
+    username: user_name_monitoring
+    passwordSecretKeyRef:
+      name: user_name_monitoring
+      key: monitoring_password

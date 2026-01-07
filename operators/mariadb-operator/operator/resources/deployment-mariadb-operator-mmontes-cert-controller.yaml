@@ -1,0 +1,59 @@
+# Source: mariadb-operator/templates/cert-controller/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mariadb-operator-mmontes-cert-controller
+  labels:
+    helm.sh/chart: mariadb-operator-0.38.1
+    app.kubernetes.io/name: mariadb-operator-cert-controller
+    app.kubernetes.io/instance: mariadb-operator-mmontes
+    app.kubernetes.io/version: "0.38.1"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mariadb-operator-cert-controller
+      app.kubernetes.io/instance: mariadb-operator-mmontes
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: mariadb-operator-cert-controller
+        app.kubernetes.io/instance: mariadb-operator-mmontes
+    spec:
+      serviceAccountName: mariadb-operator-mmontes-cert-controller-cert-controller
+      automountServiceAccountToken: true
+      containers:
+        - image: "docker-registry3.mariadb.com/mariadb-operator/mariadb-operator:0.38.1"
+          imagePullPolicy: IfNotPresent
+          name: cert-controller
+          args:
+            - cert-controller
+            - --ca-secret-name=mariadb-operator-mmontes-webhook-ca
+            - --ca-secret-namespace=mariadb-system
+            - --ca-lifetime=26280h
+            - --cert-secret-name=mariadb-operator-mmontes-webhook-cert
+            - --cert-secret-namespace=mariadb-system
+            - --cert-lifetime=2160h
+            - --renew-before-percentage=33
+            - --service-name=mariadb-operator-mmontes-webhook
+            - --service-namespace=mariadb-system
+            - --requeue-duration=5m
+            - --metrics-addr=:8080
+            - --health-addr=:8081
+            - --log-level=INFO
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+              name: metrics
+            - containerPort: 8081
+              protocol: TCP
+              name: health
+          env: 
+            - name: CLUSTER_NAME
+              value: cluster.local
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8081
+            initialDelaySeconds: 20
+            periodSeconds: 5

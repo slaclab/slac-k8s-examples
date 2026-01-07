@@ -1,0 +1,70 @@
+# Source: mariadb-operator/templates/webhook/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mariadb-operator-mmontes-webhook
+  labels:
+    helm.sh/chart: mariadb-operator-0.38.1
+    app.kubernetes.io/name: mariadb-operator-webhook
+    app.kubernetes.io/instance: mariadb-operator-mmontes
+    app.kubernetes.io/version: "0.38.1"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mariadb-operator-webhook
+      app.kubernetes.io/instance: mariadb-operator-mmontes
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: mariadb-operator-webhook
+        app.kubernetes.io/instance: mariadb-operator-mmontes
+    spec:
+      serviceAccountName: mariadb-operator-mmontes-webhook
+      automountServiceAccountToken: true
+      hostNetwork: false
+      containers:
+        - image: "docker-registry3.mariadb.com/mariadb-operator/mariadb-operator:0.38.1"
+          imagePullPolicy: IfNotPresent
+          name: webhook
+          args:
+            - webhook
+            - --ca-cert-path=/tmp/k8s-webhook-server/certificate-authority/tls.crt
+            - --cert-dir=/tmp/k8s-webhook-server/serving-certs
+            - --dns-name=mariadb-operator-mmontes-webhook.mariadb-system.svc
+            - --port=9443
+            - --metrics-addr=:8080
+            - --health-addr=:8081
+            - --log-level=INFO
+          ports:
+            - containerPort: 9443
+              protocol: TCP
+              name: https
+            - containerPort: 8080
+              protocol: TCP
+              name: metrics
+            - containerPort: 8081
+              protocol: TCP
+              name: health
+          volumeMounts:
+            - mountPath: /tmp/k8s-webhook-server/certificate-authority
+              name: ca
+              readOnly: true
+            - mountPath: /tmp/k8s-webhook-server/serving-certs
+              name: cert
+              readOnly: true
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8081
+            initialDelaySeconds: 20
+            periodSeconds: 5
+      volumes:
+        - name: ca
+          secret:
+            defaultMode: 420
+            secretName: mariadb-operator-mmontes-webhook-ca
+        - name: cert
+          secret:
+            defaultMode: 420
+            secretName: mariadb-operator-mmontes-webhook-cert

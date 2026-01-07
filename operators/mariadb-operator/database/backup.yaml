@@ -1,0 +1,37 @@
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: Backup
+metadata:
+  name: name_backup
+  namespace: prod
+spec:
+  mariaDbRef:
+    name: name_mariadb_db_resource
+  schedule:
+    cron: "0 20 * * *"
+    suspend: false
+  databases:
+    - list_of_databases
+  maxRetention: 720h
+  storage:
+    s3:
+      bucket: name_bucket
+      endpoint: s3-endpoint.domain
+      accessKeyIdSecretKeyRef:
+        name: name-secret-s3
+        key: access_key
+      secretAccessKeySecretKeyRef:
+        name: name-secret-s3
+        key: secret_key
+      tls:
+        enabled: true
+  args:
+    - --single-transaction
+    - --verbose
+  logLevel: info
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: 4
+      memory: 4Gi
