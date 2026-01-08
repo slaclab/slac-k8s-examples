@@ -9,6 +9,8 @@ metadata:
     # prefer flexiable ip (leave this empty), uncomment below for mandatory fixed IP, please check SCS if the ip is free  
     # metallb.io/loadBalancerIPs: xxx
 spec:
+  # avoid Nodeports, required by policy
+  allocateLoadBalancerNodePorts: false
   ports:
   - name: pgbouncer
     port: 3306
@@ -19,8 +21,6 @@ spec:
   type: ClusterIP
   # for cross vCluster traffic, uncomment below
   # type: Loadbalancer
-  # avoid Nodeports, required by policy
-  allocateLoadBalancerNodePorts: false
   loadBalancerSourceRanges:
   - 134.79.0.0/16
   - 172.16.0.0/8
