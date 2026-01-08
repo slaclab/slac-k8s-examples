@@ -5,7 +5,7 @@ metadata:
   name: metallb-vlan832-2
   annotations:
     # a valid address-pool is required by policy
-    metallb.io/address-pool: sdf-ad-ingest
+    metallb.io/address-pool: sdf-services
     # prefer flexiable ip - leave below as uncommented), uncomment for mandatory fixed IP (check SCS if the ip is free)
     # metallb.io/loadBalancerIPs: xxx
 spec:
@@ -19,5 +19,5 @@ spec:
     app: app-name
   # for in-cluster traffic, default and preferred
   type: ClusterIP
-  # for cross vCluster traffic, uncomment below
+  # for cross vCluster traffic
   # type: Loadbalancer
