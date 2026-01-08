@@ -17,7 +17,5 @@ spec:
     targetPort: 3306
   selector:
     app: app-name
-  # for in-cluster traffic, default and preferred
-  type: ClusterIP
   # for cross vCluster traffic
-  # type: Loadbalancer
+  type: Loadbalancer
