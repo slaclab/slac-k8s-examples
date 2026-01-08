@@ -6,7 +6,7 @@ metadata:
   annotations:
     # a valid address-pool is required by policy
     metallb.io/address-pool: sdf-services
-    # prefer flexiable ip - leave below as uncommented), uncomment for mandatory fixed IP (check SCS if the ip is free)
+    # prefer flexiable ip - leave below as uncommented, uncomment for mandatory fixed IP (check SCS if the ip is free)
     # metallb.io/loadBalancerIPs: xxx
 spec:
   # avoid Nodeports, required by policy
