@@ -17,10 +17,7 @@ spec:
     targetPort: 3306
   selector:
     app: metallb-vlan832-2
-  # for in-cluster traffic, preferred
-  type: ClusterIP
-  # for cross vCluster traffic, uncomment below
-  # type: Loadbalancer
+  type: Loadbalancer
   loadBalancerSourceRanges:
   - 134.79.0.0/16
   - 172.16.0.0/8
