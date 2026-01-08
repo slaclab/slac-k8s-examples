@@ -1,0 +1,23 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: metallb-vlan832-2
+  annotations:
+    # a valid address-pool is required by policy
+    metallb.io/address-pool: sdf-ad-ingest
+    # prefer flexiable ip - leave below as uncommented), uncomment for mandatory fixed IP (check SCS if the ip is free)
+    # metallb.io/loadBalancerIPs: xxx
+spec:
+  # avoid Nodeports, required by policy
+  allocateLoadBalancerNodePorts: false
+  ports:
+  - name: pgbouncer
+    port: 3306
+    targetPort: 3306
+  selector:
+    app: app-name
+  # for in-cluster traffic, default and preferred
+  type: ClusterIP
+  # for cross vCluster traffic, uncomment below
+  # type: Loadbalancer
