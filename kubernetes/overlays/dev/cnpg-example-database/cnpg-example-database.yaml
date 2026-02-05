@@ -71,3 +71,7 @@ spec:
   storage:
     storageClass: wekafs--sdf-k8s01
     size: 100Gi
+  smartShutdownTimeout: 150
+  stopDelay: 240
+  switchoverDelay: 360
+  failoverDelay: 30
