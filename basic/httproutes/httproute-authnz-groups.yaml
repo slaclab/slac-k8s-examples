@@ -1,0 +1,23 @@
+# Login required, and the user must belong to a Coact group listed here.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: my-app
+  annotations:
+    auth.sdf.slac.stanford.edu/required: "true"
+    # Plural "required-groups". Comma-separated facility:repo patterns; wildcards allowed,
+    # for example "rubin:*" or "*:admin".
+    auth.sdf.slac.stanford.edu/required-groups: "rubin:production,rubin:dev"
+    # "any" (the default): one listed group is enough. "all": every listed group is needed.
+    auth.sdf.slac.stanford.edu/groups-match-mode: "any"
+spec:
+  hostnames:
+    - my-app.slac.stanford.edu
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: my-app
+          port: 8080
