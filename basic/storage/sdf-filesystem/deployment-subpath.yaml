@@ -1,0 +1,37 @@
+# Read-write in a subdirectory: every replica works in /sdf/group/ad/my-app/output, on any node.
+# The replicas share one claim and one directory, so the application must coordinate its writers.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+        - name: my-app
+          image: busybox:1.37.0
+          command: [sh, -c, "hostname >> /output/hosts.log && sleep infinity"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 32Mi
+          volumeMounts:
+            - name: output
+              mountPath: /output
+              # Relative to the share root. The kubelet creates the directory if it is missing,
+              # so a typo gives a new empty directory instead of an error.
+              subPath: my-app/output
+      volumes:
+        - name: output
+          persistentVolumeClaim:
+            claimName: task-pv-claim

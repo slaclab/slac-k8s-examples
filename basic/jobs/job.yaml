@@ -1,0 +1,72 @@
+# A one-off Job: at most two retries, a one-hour deadline, and the Job deleted a day after it ends.
+# It writes its result, and the log of every attempt, to the claim in pvc.yaml, because the
+# platform deletes finished pods, with their logs, within minutes.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: my-app-batch
+spec:
+  # The default, 6, retries for more than ten minutes: long enough for the cleanup to delete the
+  # first failed pods before the Job fails.
+  backoffLimit: 2
+  activeDeadlineSeconds: 3600
+  # The pods are long gone by then; this removes the Job and its status.
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      # A failed attempt ends its pod, and the next attempt runs in a new pod with its own log file.
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: my-app-batch
+          image: busybox:1.37.0
+          env:
+            # The Job controller puts this label on every pod it creates.
+            - name: JOB_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['batch.kubernetes.io/job-name']
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          command:
+            - sh
+            - -c
+            - |
+              set -eu
+              out="/results/$JOB_NAME"
+              mkdir -p "$out"
+              {
+                echo "$(date -u) started in $POD_NAME"
+                # The real work goes here.
+                seq 1 100 | awk '{ s += $1 } END { print s }' > "$out/result.txt"
+                echo "$(date -u) finished"
+              } > "$out/$POD_NAME.log" 2>&1
+              echo "result: $(cat "$out/result.txt")"
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 128Mi
+          volumeMounts:
+            - name: results
+              mountPath: /results
+      volumes:
+        - name: results
+          persistentVolumeClaim:
+            claimName: my-app-results

@@ -1,0 +1,67 @@
+# A stateless web server that stays up through node drains, node failures and preemption:
+# three replicas on different nodes, traffic only to ready replicas, and a clean shutdown.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: my-app
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      # A rollout starts each new replica before it stops an old one.
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          # One replica per node where possible, so a drain or failure stops one replica.
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: my-app
+      # Leave a failed node 30 seconds after the node is marked unreachable or not ready, instead
+      # of the default 300. Each toleration names its key and a time: never tolerate every taint.
+      tolerations:
+        - key: node.kubernetes.io/unreachable
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 30
+        - key: node.kubernetes.io/not-ready
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 30
+      # Time for the preStop hook and the server's own shutdown. Then the container is killed.
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: my-app
+          image: nginx:1.28.0
+          ports:
+            - name: http
+              containerPort: 80
+          # The Service sends traffic only to ready replicas.
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 5
+          lifecycle:
+            preStop:
+              # Keep serving while the Service stops sending traffic here, then stop.
+              sleep:
+                seconds: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 128Mi

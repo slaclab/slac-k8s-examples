@@ -1,0 +1,18 @@
+# Limits each client address to an average of 10 requests per second, in bursts of up to 20.
+# Each gateway replica counts on its own, so a client can get this limit once per replica.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: rate-limit
+spec:
+  rateLimit:
+    average: 10
+    period: 1s
+    burst: 20
+    # Count by the client's address. Without this, every client arrives with the F5's address
+    # and all share one limit. The platform sets this only for ipAllowList, not for rateLimit.
+    sourceCriterion:
+      ipStrategy:
+        excludedIPs:
+          - 134.79.138.0/24   # the F5 load balancer
+          - 192.168.0.0/16    # the cluster's pod network

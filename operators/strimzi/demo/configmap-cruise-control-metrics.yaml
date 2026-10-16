@@ -1,0 +1,16 @@
+# JMX Prometheus Exporter rules for Cruise Control, from the Strimzi 0.47.0 examples.
+# Referenced by spec.cruiseControl.metricsConfig in kafka.yaml and kafka-external.yaml.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cruise-control-metrics
+  labels:
+    app: strimzi
+data:
+  metrics-config.yml: |
+    # See https://github.com/prometheus/jmx_exporter for more info about JMX Prometheus Exporter metrics
+    lowercaseOutputName: true
+    rules:
+    - pattern: kafka.cruisecontrol<name=(.+)><>(\w+)
+      name: kafka_cruisecontrol_$1_$2
+      type: GAUGE

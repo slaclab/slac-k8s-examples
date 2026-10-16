@@ -1,0 +1,29 @@
+# Scratch space on the node's disk: an emptyDir with sizeLimit, and ephemeral-storage requests and limits.
+# Writes do not fail at a limit: the kubelet evicts the pod once the volume or the container is over it.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-app-scratch
+spec:
+  restartPolicy: Never
+  containers:
+    - name: worker
+      image: busybox:1.37.0
+      command: [sh, -c, "dd if=/dev/zero of=/scratch/data bs=1M count=100 && du -sh /scratch && sleep 3600"]
+      resources:
+        requests:
+          cpu: 100m
+          memory: 64Mi
+          # Covers the emptyDir, the logs and the writable layer.
+          ephemeral-storage: 1Gi
+        limits:
+          memory: 128Mi
+          ephemeral-storage: 2Gi
+      volumeMounts:
+        - name: scratch
+          mountPath: /scratch
+  volumes:
+    - name: scratch
+      emptyDir:
+        # Above this the kubelet evicts the pod.
+        sizeLimit: 1Gi

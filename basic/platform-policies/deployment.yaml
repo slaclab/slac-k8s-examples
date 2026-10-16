@@ -1,0 +1,42 @@
+# A Deployment whose pods pass the host's pod rules: an emptyDir for scratch space instead of
+# hostPath, no privileged container, and requests and limits on the container.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+        - name: my-app
+          image: nginx:1.28.0
+          ports:
+            - containerPort: 80
+              name: http
+          securityContext:
+            # privileged: true would still run, but the host records it (see README.md).
+            allowPrivilegeEscalation: false
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+              ephemeral-storage: 100Mi
+            limits:
+              cpu: 500m
+              memory: 128Mi
+              ephemeral-storage: 1Gi
+          volumeMounts:
+            - name: cache
+              mountPath: /var/cache/nginx
+      volumes:
+        # Scratch space on the node, deleted with the pod. The host rejects hostPath volumes.
+        - name: cache
+          emptyDir:
+            sizeLimit: 500Mi

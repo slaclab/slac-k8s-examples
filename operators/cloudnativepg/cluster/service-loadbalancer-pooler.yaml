@@ -1,0 +1,26 @@
+# Publishes the PgBouncer pool from pooler-rw.yaml on a MetalLB address, for clients outside your
+# vcluster. See ../../../basic/services/README.md for pools, fixed addresses and source ranges.
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-db-external
+  annotations:
+    # Required by the host: the pool the address comes from. sdf-services is the general pool.
+    metallb.io/address-pool: sdf-services
+spec:
+  type: LoadBalancer
+  # Required by the host: no node ports.
+  allocateLoadBalancerNodePorts: false
+  # Only these client networks reach the address. Narrow it to the networks that need the database.
+  loadBalancerSourceRanges:
+    - 134.79.0.0/16
+    - 172.16.0.0/12
+  # The pods of the Pooler. For the primary itself, select cnpg.io/cluster: my-db and
+  # cnpg.io/instanceRole: primary instead.
+  selector:
+    cnpg.io/poolerName: my-db-pooler-rw
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: pgbouncer
+      protocol: TCP

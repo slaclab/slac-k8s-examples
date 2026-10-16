@@ -1,44 +1,36 @@
+# Installs mariadb-operator in your vcluster from a pinned release.
+# Needs helm and the kubectl slice plugin (https://github.com/patrickdappollonio/kubectl-slice).
 
+VERSION ?= 0.38.1
 NAMESPACE = mariadb-system
-RESOURCES_DIR = resources
+RELEASE = mariadb-operator
+KUBECTL_DEPLOY_CONTEXT ?= my-vcluster
 CRDS_DIR = crds
+RESOURCES_DIR = resources
 
-mariadb-operator:
-	helm repo add mariadb-operator https://mariadb-operator.github.io/mariadb-operator
-	# needs kubectl slice plugging
-	helm template mariadb-operator-crds mariadb-operator/mariadb-operator-crds | kubectl slice -t "{{.kind | lower}}-{{.metadata.name | lower}}.yaml" -o $(CRDS_DIR)/
-	helm template mariadb-operator mariadb-operator/mariadb-operator --create-namespace -n $(NAMESPACE) --version 0.38.1 | kubectl slice -t "{{.kind | lower}}-{{.metadata.name | lower}}.yaml" -o $(RESOURCES_DIR)/
+# Renders the CRDs and the operator of release $(VERSION) into crds/ and resources/.
+render:
+	helm repo add mariadb-operator https://mariadb-operator.github.io/mariadb-operator --force-update
+	helm repo update mariadb-operator
+	rm -rf $(CRDS_DIR) $(RESOURCES_DIR)
+	helm template mariadb-operator-crds mariadb-operator/mariadb-operator-crds --version $(VERSION) \
+	  | kubectl slice -t "{{.kind | lower}}-{{.metadata.name | lower}}.yaml" -o $(CRDS_DIR)/
+	helm template $(RELEASE) mariadb-operator/mariadb-operator --version $(VERSION) -n $(NAMESPACE) \
+	  -f mariadb-operator-values.yaml \
+	  | kubectl slice -t "{{.kind | lower}}-{{.metadata.name | lower}}.yaml" -o $(RESOURCES_DIR)/
 
-apply-crds:
-	kubectl apply -f $(CRDS_DIR)/
+ensure-context:
+	@if [ "$$(kubectl config current-context)" != "$(KUBECTL_DEPLOY_CONTEXT)" ]; then \
+	  echo "Current kubectl context is not $(KUBECTL_DEPLOY_CONTEXT)."; exit 1; fi
 
-create-namespace:
-	kubectl create namespace $(NAMESPACE)
+# Server-side apply: the MariaDB CRD is too large for client-side apply.
+apply-crds: ensure-context
+	kubectl apply --server-side --force-conflicts -f $(CRDS_DIR)/
 
-apply-non-namespaced:
-	kubectl apply -f $(RESOURCES_DIR)/clusterrole-mariadb-operator-mmontes.yaml
-	kubectl apply -f $(RESOURCES_DIR)/clusterrole-mariadb-operator-mmontes-cert-controller.yaml
-	kubectl apply -f $(RESOURCES_DIR)/clusterrole-mariadb-operator-mmontes-edit.yaml
-	kubectl apply -f $(RESOURCES_DIR)/clusterrole-mariadb-operator-mmontes-view.yaml
-	kubectl apply -f $(RESOURCES_DIR)/clusterrolebinding-mariadb-operator-mmontes.yaml
-	kubectl apply -f $(RESOURCES_DIR)/clusterrolebinding-mariadb-operator-mmontes-cert-controller.yaml
-	kubectl apply -f $(RESOURCES_DIR)/clusterrolebinding-mariadb-operator-mmontes:auth-delegator.yaml
-	kubectl apply -f $(RESOURCES_DIR)/mutatingwebhookconfiguration-mariadb-operator-mmontes-webhook.yaml
-	kubectl apply -f $(RESOURCES_DIR)/validatingwebhookconfiguration-mariadb-operator-mmontes-webhook.yaml
+apply-operator: ensure-context
+	kubectl apply -f ns.yaml
+	kubectl apply -n $(NAMESPACE) -f $(RESOURCES_DIR)/
 
-apply-resources-namespaced:
-	kubectl apply -n $(NAMESPACE) -f $(RESOURCES_DIR)/role-mariadb-operator-mmontes.yaml
-	kubectl apply -n $(NAMESPACE) -f $(RESOURCES_DIR)/rolebinding-mariadb-operator-mmontes.yaml
-	kubectl apply -n $(NAMESPACE) -f $(RESOURCES_DIR)/role-mariadb-operator-mmontes-cert-controller.yaml
-	kubectl apply -n $(NAMESPACE) -f $(RESOURCES_DIR)/rolebinding-mariadb-operator-mmontes-cert-controller.yaml
-	kubectl apply -n $(NAMESPACE) -f $(RESOURCES_DIR)/serviceaccount-mariadb-operator-mmontes.yaml
-	kubectl apply -n $(NAMESPACE) -f $(RESOURCES_DIR)/serviceaccount-mariadb-operator-mmontes-cert-controller-cert-controller.yaml
-	kubectl apply -n $(NAMESPACE) -f $(RESOURCES_DIR)/serviceaccount-mariadb-operator-mmontes-webhook.yaml
-	kubectl apply -n $(NAMESPACE) -f $(RESOURCES_DIR)/configmap-mariadb-operator-env.yaml
-	kubectl apply -n $(NAMESPACE) -f $(RESOURCES_DIR)/service-mariadb-operator-mmontes-webhook.yaml
-	kubectl apply -n $(NAMESPACE) -f $(RESOURCES_DIR)/deployment-mariadb-operator-mmontes-cert-controller.yaml
-	kubectl apply -n $(NAMESPACE) -f $(RESOURCES_DIR)/deployment-mariadb-operator-mmontes-webhook.yaml
-	kubectl apply -n $(NAMESPACE) -f $(RESOURCES_DIR)/configmap-mariadb-operator-env.yaml
-	kubectl apply -n $(NAMESPACE) -f $(RESOURCES_DIR)/deployment-mariadb-operator-mmontes.yaml
+apply: apply-crds apply-operator
 
-apply: apply-crds create-namespace apply-non-namespaced apply-resources-namespaced
+.PHONY: render ensure-context apply-crds apply-operator apply

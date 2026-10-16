@@ -1,0 +1,8 @@
+# A self-signed Issuer in your namespace. It signs only your CA certificate (certificate-ca.yaml);
+# the CA Issuer (issuer-ca.yaml) signs everything else.
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: selfsigned
+spec:
+  selfSigned: {}

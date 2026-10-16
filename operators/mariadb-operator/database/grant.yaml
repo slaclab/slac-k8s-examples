@@ -1,33 +1,15 @@
+# All privileges for my_app on the database my_app, and on nothing else.
 apiVersion: k8s.mariadb.com/v1alpha1
 kind: Grant
 metadata:
-  name: name_mariadb_db_resource
-  namespace: prod
+  name: my-app
 spec:
   mariaDbRef:
-    name: name_mariadb_db_resource
+    name: my-db
   privileges:
-    - "ALL PRIVILEGES"
-  database: "*"
+    - ALL PRIVILEGES
+  database: my_app
   table: "*"
-  username: user_name
-  grantOption: false
-
----
-
-apiVersion: k8s.mariadb.com/v1alpha1
-kind: Grant
-metadata:
-  name: name_mariadb_db_resource-monitoring
-  namespace: prod
-spec:
-  username: user_name_monitoring
+  username: my_app
   host: "%"
-  mariaDbRef:
-    name: name_mariadb_db_resource
-  privileges:
-    - PROCESS
-    - REPLICATION CLIENT
-    - SELECT
-  database: "*"
-  table: "*"
+  grantOption: false

@@ -1,0 +1,46 @@
+# A small web server. The Deployment and its ReplicaSet stay in your vcluster; only the pods
+# they create are synced to the host cluster, where the host scheduler places them.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app
+  labels:
+    app: my-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+      containers:
+        - name: my-app
+          image: busybox:1.37.0
+          command: [httpd, -f, -p, "8080", -h, /www]
+          ports:
+            - name: http
+              containerPort: 8080
+          # No LimitRange fills these in for you: set requests and limits on every container.
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+          volumeMounts:
+            - name: content
+              mountPath: /www
+              readOnly: true
+      volumes:
+        - name: content
+          configMap:
+            name: my-app-content

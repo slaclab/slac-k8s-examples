@@ -1,0 +1,42 @@
+# One pod with a second interface, net1, on the AD ingest network, at an address the platform team assigned.
+# 192.0.2.10 is a documentation placeholder (RFC 5737): replace it. For another network, see README.md.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app
+spec:
+  # An address belongs to one pod: one replica, and the old pod stops before the new one starts.
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+      annotations:
+        # JSON in a string. Multus has no "gateway" field: the network's routes decide what uses net1.
+        k8s.v1.cni.cncf.io/networks: '[{"name": "sdf-ad-ingest", "namespace": "multus-system", "ips": ["192.0.2.10/24"]}]'
+    spec:
+      # Nodes that run Multus and are attached to the network (vlan832 is sdf-ad-ingest).
+      nodeSelector:
+        edu.stanford.slac.sdf.k8s.networking.multus: enable
+        edu.stanford.slac.sdf.networking/vlan832: "true"
+      # Those nodes carry this taint. Tolerate exactly this one, never every taint.
+      tolerations:
+        - key: node-role.kubernetes.io/ext-load-balancer
+          operator: Exists
+          effect: NoSchedule
+      containers:
+        - name: my-app
+          image: busybox:1.37.0
+          command: [sh, -c, "ip addr show net1; ip route; sleep infinity"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 32Mi

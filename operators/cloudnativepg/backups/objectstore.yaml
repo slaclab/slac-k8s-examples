@@ -1,0 +1,36 @@
+# Where backups and WAL files go: a bucket on S3DF object storage, with the keys from
+# Secret my-app-db-backup-s3 and a 30-day recovery window.
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
+metadata:
+  name: my-app-db-backup
+spec:
+  configuration:
+    # Your own bucket. barman-cloud adds a folder per server name under this path.
+    destinationPath: s3://my-bucket/my-app-db
+    # S3DF object storage. Required: without it barman-cloud looks for AWS.
+    endpointURL: https://s3dfrgw.slac.stanford.edu
+    s3Credentials:
+      accessKeyId:
+        name: my-app-db-backup-s3
+        key: ACCESS_KEY_ID
+      secretAccessKey:
+        name: my-app-db-backup-s3
+        key: ACCESS_SECRET_KEY
+    wal:
+      compression: gzip
+      maxParallel: 4
+    data:
+      compression: gzip
+      jobs: 2
+  # Base backups older than 30 days, and the WAL files that only they need, are deleted, except the
+  # newest one that still covers the whole window. Without this nothing is ever deleted.
+  retentionPolicy: "30d"
+  instanceSidecarConfiguration:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: "1"
+        memory: 512Mi

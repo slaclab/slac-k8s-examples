@@ -1,0 +1,33 @@
+# Rubin embargo nodes: works only in a vcluster that the platform has entitled to the pool.
+# The annotation goes on the pod template; the host adds the toleration and the nodeSelector.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app-embargo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: my-app-embargo
+  template:
+    metadata:
+      labels:
+        app: my-app-embargo
+      annotations:
+        # Exactly "true". The host matches pods only: never put this on the Deployment's metadata.
+        # In a vcluster that is not entitled to the pool, the host rejects the pod.
+        # For the RSP pool, the key is edu.stanford.slac.sdf.project/rsp.
+        edu.stanford.slac.sdf.project/usdf-embargo: "true"
+    spec:
+      # No toleration or nodeSelector for the pool: the host adds both.
+      containers:
+        - name: my-app-embargo
+          image: busybox:1.37.0
+          command: [sh, -c, "sleep infinity"]
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 64Mi

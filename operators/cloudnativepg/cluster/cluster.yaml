@@ -1,0 +1,55 @@
+# A three-instance PostgreSQL cluster on Weka storage with a separate WAL volume. The operator
+# generates the application credentials in the Secret my-db-app; applications connect to my-db-rw.
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: my-db
+spec:
+  # Pinned image. Changing the minor is a rolling restart; changing the major starts an offline
+  # pg_upgrade of the whole cluster (see the README).
+  imageName: ghcr.io/cloudnative-pg/postgresql:17.5
+  # One primary and two replicas. With a single instance any node problem stops the database.
+  instances: 3
+  # Lets the operator switch over to a replica on its own when the primary must restart.
+  primaryUpdateStrategy: unsupervised
+
+  bootstrap:
+    initdb:
+      database: app
+      owner: app
+      # Runs in the application database. postInitSQL runs in the postgres database instead, which
+      # is not where your tables are. The extension must exist in the image.
+      postInitApplicationSQL:
+        - CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+  storage:
+    # The default class, on every vcluster's allowlist. The size is a hard quota: Postgres stops when
+    # the volume is full. Raising size later grows the volume in place; it cannot be lowered.
+    storageClass: wekafs--sdf-k8s01
+    size: 50Gi
+  walStorage:
+    storageClass: wekafs--sdf-k8s01
+    size: 20Gi
+
+  resources:
+    requests:
+      cpu: "2"
+      memory: 8Gi
+    limits:
+      cpu: "2"
+      memory: 8Gi
+
+  postgresql:
+    parameters:
+      # Keep shared_buffers at about a quarter of the memory limit, and shared_buffers plus
+      # work_mem times max_connections well inside it. Many clients go through the Pooler instead.
+      shared_buffers: 2GB
+      work_mem: 32MB
+      maintenance_work_mem: 256MB
+      max_connections: "100"
+      # Keep WAL well inside the walStorage size.
+      max_wal_size: 4GB
+      min_wal_size: 1GB
+      wal_keep_size: 2GB
+      pg_stat_statements.max: "10000"
+      pg_stat_statements.track: all

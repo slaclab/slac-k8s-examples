@@ -1,10 +1,9 @@
-namespace: epics-test
-
+# The EPICS example: one Deployment and its EPICS settings. Apply with: kubectl apply -k . -n my-namespace
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
 resources:
-  - ns.yaml
   - epics-example-app.yaml
-
 configMapGenerator:
   - name: epics-config-env
     envs:
-    - epics-config.env
+      - epics-config.env

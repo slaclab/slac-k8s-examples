@@ -1,0 +1,20 @@
+# A client certificate for mutual TLS, signed by the same CA.
+# The server in deployment.yaml accepts any client certificate this CA has signed.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: my-app-client
+spec:
+  secretName: my-app-client-tls
+  commonName: my-app-client
+  usages:
+    - digital signature
+    - client auth
+  duration: 2160h
+  renewBefore: 360h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: my-app-ca
+    kind: Issuer

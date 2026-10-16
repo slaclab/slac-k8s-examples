@@ -1,0 +1,20 @@
+# A ServiceMonitor for a metrics endpoint that needs a token in the Authorization header.
+# An alternative to serviceMonitor.yaml for the same Service: apply one or the other, not both.
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: my-app
+spec:
+  selector:
+    matchLabels:
+      app: my-app
+  endpoints:
+  - port: metrics
+    path: /metrics
+    interval: 30s
+    authorization:
+      type: Bearer  # the header becomes "Authorization: Bearer <token>"
+      credentials:
+        name: my-app-metrics-token  # a Secret in the same namespace as the monitor; the platform copies it to the host
+        key: token

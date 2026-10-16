@@ -1,0 +1,16 @@
+# A topic with three partitions, each on three brokers of my-kafka. The topic operator creates it
+# in Kafka and keeps it in line with this object.
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: my-app-events
+  labels:
+    strimzi.io/cluster: my-kafka
+spec:
+  partitions: 3
+  replicas: 3
+  config:
+    # Keep messages for seven days, and no more than 10 GiB per partition.
+    retention.ms: 604800000
+    retention.bytes: 10737418240
+    min.insync.replicas: 2

@@ -1,0 +1,43 @@
+# A pod whose container fails, so that its last log lines end up in the container status as the
+# termination message, where `kubectl describe pod` shows them next to the exit code and reason.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-app-failing
+  labels:
+    app.kubernetes.io/name: my-app
+    app.kubernetes.io/instance: my-app-failing
+    app.kubernetes.io/component: check
+spec:
+  # Never: the container is not restarted, so the pod ends in phase Failed and its status keeps
+  # the exit code and the termination message until the host's finished-pod cleanup deletes it.
+  restartPolicy: Never
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65534
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: my-app
+      image: busybox:1.37.0
+      command:
+        - sh
+        - -c
+        - |
+          echo "starting"
+          echo "config file /etc/my-app/config.yaml not found" >&2
+          exit 3
+      # On a non-zero exit, Kubernetes copies the last log lines (at most 80 lines or 2048
+      # bytes) into the container status when the termination message file is empty.
+      terminationMessagePolicy: FallbackToLogsOnError
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: [ALL]
+      resources:
+        requests:
+          cpu: 10m
+          memory: 16Mi
+        limits:
+          cpu: 100m
+          memory: 64Mi

@@ -1,0 +1,44 @@
+# Three replicas, on any nodes, share the ReadWriteMany claim in pvc-shared.yaml at /shared.
+# Each replica writes its own file, so the writers never touch the same file.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app-workers
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: my-app-workers
+  template:
+    metadata:
+      labels:
+        app: my-app-workers
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: my-app-workers
+          image: busybox:1.37.0
+          command: [sh, -c, "date >> /shared/$(hostname).log && sleep infinity"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 32Mi
+          volumeMounts:
+            - name: shared
+              mountPath: /shared
+      volumes:
+        - name: shared
+          persistentVolumeClaim:
+            claimName: my-app-shared

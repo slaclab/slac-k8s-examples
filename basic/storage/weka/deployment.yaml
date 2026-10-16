@@ -1,0 +1,53 @@
+# One replica, running as a non-root user, keeps its data on the claim in pvc.yaml at /data.
+# Recreate stops the old pod before the new one starts, so a ReadWriteOnce volume never blocks a rollout.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app
+spec:
+  replicas: 1
+  strategy:
+    # With RollingUpdate, a new pod on another node cannot attach the volume while the old pod
+    # runs, and the rollout stalls.
+    type: Recreate
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        # The volume root is mode 0777, so any user can write without fsGroup. Set fsGroup when
+        # your files must belong to a group. OnRootMismatch skips the recursive ownership change
+        # on later starts, which otherwise walks every file on the volume each time a pod starts.
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: my-app
+          image: busybox:1.37.0
+          command: [sh, -c, "date >> /data/started.log && sleep infinity"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 32Mi
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: my-app-data

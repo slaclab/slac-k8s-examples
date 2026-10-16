@@ -1,0 +1,34 @@
+# The backend for the Service examples: two nginx pods labelled app: my-app,
+# serving HTTP on the container port named http (80).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+        - name: web
+          image: nginx:1.28.0
+          ports:
+            - name: http
+              containerPort: 80
+          # MetalLB answers for a LoadBalancer address only while at least one pod is ready.
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 128Mi

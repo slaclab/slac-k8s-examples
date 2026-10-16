@@ -1,0 +1,47 @@
+# Three nodes that are both KRaft controller and broker for the Kafka cluster my-kafka, each with
+# a 100Gi Weka volume. Apply it with kafka.yaml or kafka-external.yaml.
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaNodePool
+metadata:
+  name: dual-role
+  labels:
+    # Joins this pool to the Kafka object my-kafka.
+    strimzi.io/cluster: my-kafka
+spec:
+  replicas: 3
+  roles:
+    - controller
+    - broker
+  storage:
+    type: jbod
+    volumes:
+      - id: 0
+        type: persistent-claim
+        # The default class, on every vcluster's allowlist. A hard quota: Kafka stops when it is full.
+        class: wekafs--sdf-k8s01
+        size: 100Gi
+        # Keep the claims, and the data, when the Kafka cluster or the pool is deleted.
+        deleteClaim: false
+        # The KRaft metadata log shares this volume with the topic data.
+        kraftMetadata: shared
+  resources:
+    requests:
+      cpu: 500m
+      memory: 4Gi
+    limits:
+      cpu: "2"
+      memory: 4Gi
+  jvmOptions:
+    -Xms: 2g
+    -Xmx: 2g
+  template:
+    pod:
+      # Prefer one node per Kafka pod, so one node failure stops one broker.
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              strimzi.io/cluster: my-kafka
+              strimzi.io/pool-name: dual-role

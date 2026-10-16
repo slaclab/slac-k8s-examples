@@ -1,0 +1,15 @@
+# Raises the operator's memory limit. The upstream release ships 200Mi, which the platform found
+# too small for its own operator; it runs with 2Gi.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cnpg-controller-manager
+  namespace: cnpg-system
+spec:
+  template:
+    spec:
+      containers:
+        - name: manager
+          resources:
+            limits:
+              memory: 2Gi

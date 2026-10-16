@@ -1,0 +1,16 @@
+# A new, empty 10Gi volume on Weka for one workload (used by deployment.yaml).
+# Bound as soon as it is created; deleting the claim deletes its data.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: my-app-data
+spec:
+  # The default class. Name it anyway, so the manifest shows where the data lives.
+  storageClassName: wekafs--sdf-k8s01
+  # Pods on one node at a time. Use ReadWriteMany to share the volume across nodes.
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      # A hard quota: writes fail once 10Gi is used. Raise it later to grow the volume.
+      storage: 10Gi

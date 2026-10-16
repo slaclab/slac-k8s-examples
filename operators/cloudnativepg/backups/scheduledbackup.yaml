@@ -1,0 +1,17 @@
+# A base backup of my-app-db every night at 02:00, through the barman-cloud plugin.
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: my-app-db-daily
+spec:
+  # Six fields, seconds first: "0 0 2 * * *" is 02:00:00 every day. Not Kubernetes CronJob syntax.
+  schedule: "0 0 2 * * *"
+  # Take the first backup now, so that recovery is possible before the first scheduled run.
+  immediate: true
+  # Created Backup objects are deleted with this ScheduledBackup.
+  backupOwnerReference: self
+  method: plugin
+  pluginConfiguration:
+    name: barman-cloud.cloudnative-pg.io
+  cluster:
+    name: my-app-db

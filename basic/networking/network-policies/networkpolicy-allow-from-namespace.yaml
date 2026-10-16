@@ -1,0 +1,20 @@
+# Lets pods in the namespace my-client-namespace of the same vcluster reach my-app on port 8080.
+# For an `isolated` incoming profile. With an `isolated` outgoing profile, also allow egress from my-client-namespace.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-my-app-from-my-client-namespace
+spec:
+  podSelector:
+    matchLabels:
+      app: my-app
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: my-client-namespace
+      ports:
+        - port: 8080
+          protocol: TCP

@@ -1,0 +1,8 @@
+# A CA Issuer that signs server and client certificates with your private CA.
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: my-app-ca
+spec:
+  ca:
+    secretName: my-app-ca   # the Secret written for certificate-ca.yaml

@@ -1,13 +1,16 @@
+# The Service in front of the application, with a named port.
+# The ServiceMonitor selects this Service by its labels and scrapes the port by name.
 ---
-kind: Service
 apiVersion: v1
+kind: Service
 metadata:
-  name: example-app
+  name: my-app
   labels:
-    app: example-app
+    app: my-app  # the ServiceMonitor's selector matches this label
 spec:
   selector:
-    app: example-app
+    app: my-app
   ports:
-  - name: web
+  - name: metrics  # the ServiceMonitor refers to this port by name
     port: 8080
+    targetPort: metrics

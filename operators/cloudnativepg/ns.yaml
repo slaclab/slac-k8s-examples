@@ -1,3 +1,5 @@
+# The namespace the operator runs in. The upstream release uses the same name; `make resource`
+# drops the release's own Namespace object in favour of this file.
 apiVersion: v1
 kind: Namespace
 metadata:

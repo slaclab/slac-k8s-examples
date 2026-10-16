@@ -1,0 +1,34 @@
+# A client on the normal pod network, on any node, with no hostAliases. It reaches the relay by DNS name.
+# Replace it with your application; netshoot only provides nc and nslookup for testing.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app
+  labels:
+    app: my-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+        - name: client
+          image: nicolaka/netshoot:v0.13
+          command: ["/bin/sh", "-c", "while true; do sleep 3600; done"]
+          env:
+            - name: DB_HOST
+              value: my-app-relay
+            - name: DB_PORT
+              value: "5432"
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi

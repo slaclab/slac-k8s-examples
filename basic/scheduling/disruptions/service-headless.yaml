@@ -1,0 +1,14 @@
+# The headless Service of statefulset-ha.yaml. It gives each replica a stable DNS name, such as
+# my-app-db-0.my-app-db, which replicas use to find each other.
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-app-db
+spec:
+  clusterIP: None
+  selector:
+    app: my-app-db
+  ports:
+    - name: db
+      port: 5432
+      targetPort: 5432

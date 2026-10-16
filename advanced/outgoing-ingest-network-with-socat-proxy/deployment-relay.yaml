@@ -1,0 +1,57 @@
+# One socat relay pod with a static address on sdf-ad-ingest. It relays TCP port 5432 to db.example.org.
+# 192.0.2.10 is a documentation placeholder (RFC 5737): replace it with the address the platform team assigns you.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app-relay
+  labels:
+    app: my-app-relay
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: my-app-relay
+  template:
+    metadata:
+      labels:
+        app: my-app-relay
+      annotations:
+        k8s.v1.cni.cncf.io/networks: '[{"name": "sdf-ad-ingest", "namespace": "multus-system", "ips": ["192.0.2.10/24"]}]'
+    spec:
+      nodeSelector:
+        edu.stanford.slac.sdf.k8s.networking.multus: enable
+        edu.stanford.slac.sdf.networking/vlan832: "true"
+      tolerations:
+        - key: node-role.kubernetes.io/ext-load-balancer
+          operator: Exists
+          effect: NoSchedule
+      containers:
+        - name: socat
+          image: alpine/socat:1.8.0.3
+          args:
+            - TCP4-LISTEN:$(LISTEN_PORT),bind=$(POD_IP),fork,reuseaddr
+            - TCP4:$(DEST_ADDRESS):$(DEST_PORT)
+          env:
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: LISTEN_PORT
+              value: "5432"
+            - name: DEST_ADDRESS
+              value: db.example.org
+            - name: DEST_PORT
+              value: "5432"
+          ports:
+            - name: relay
+              containerPort: 5432
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 200m
+              memory: 64Mi

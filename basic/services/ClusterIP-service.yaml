@@ -1,14 +1,14 @@
----
+# For traffic inside your vcluster: other pods reach my-app at my-app.my-namespace.svc:8080.
+# It gets no address outside the cluster. The HTTPRoute and Ingress examples use it as their backend.
 apiVersion: v1
 kind: Service
 metadata:
-  name: service-name
+  name: my-app
 spec:
-  ports:
-  - name: pgbouncer
-    port: 3306
-    targetPort: 3306
-  selector:
-    app: app-name
-  # for in-vCluster traffic
   type: ClusterIP
+  selector:
+    app: my-app
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http   # the container port named http in deployment.yaml (80)

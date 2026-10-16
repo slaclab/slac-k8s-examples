@@ -1,0 +1,59 @@
+# A Deployment whose container writes one JSON object per line to standard output, and whose
+# labels set the Loki labels app, instance and component.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app
+  labels:
+    app.kubernetes.io/name: my-app
+    app.kubernetes.io/instance: my-app
+    app.kubernetes.io/component: web
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: my-app
+      app.kubernetes.io/instance: my-app
+  template:
+    metadata:
+      labels:
+        # The platform's log collector turns these into the Loki labels app, instance and
+        # component. Without app.kubernetes.io/name or app, every controller-created pod of your
+        # vcluster gets app="vcluster--<name>", and the applications are hard to tell apart.
+        app.kubernetes.io/name: my-app
+        app.kubernetes.io/instance: my-app
+        app.kubernetes.io/component: web
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: my-app
+          image: busybox:1.37.0
+          # Stands in for an application: one single-line JSON record per request, to stdout.
+          # Nothing is written to files inside the container, because nothing collects those.
+          command:
+            - sh
+            - -c
+            - |
+              set -eu
+              i=0
+              while true; do
+                i=$((i + 1))
+                printf '{"time":"%s","level":"info","msg":"request served","path":"/","status":200,"request_id":%d}\n' \
+                  "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$i"
+                sleep 10
+              done
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi

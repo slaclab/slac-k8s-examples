@@ -1,0 +1,50 @@
+# A new cluster, my-app-db-restored, built from the latest base backup of my-app-db and every WAL
+# file archived after it. It archives its own WAL under a new server name, so nothing is overwritten.
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: my-app-db-restored
+spec:
+  instances: 2
+  # The same major version as the backup. A base backup cannot be restored into another major version.
+  imageName: ghcr.io/cloudnative-pg/postgresql:17.5
+  bootstrap:
+    recovery:
+      # The externalClusters entry to read the backup and WAL from.
+      source: my-app-db
+      # The application database and owner. The operator generates a new password in Secret
+      # my-app-db-restored-app; to keep the old one, create a basic-auth Secret and name it in secret.name.
+      database: my-app
+      owner: my-app
+  externalClusters:
+    - name: my-app-db
+      plugin:
+        name: barman-cloud.cloudnative-pg.io
+        parameters:
+          barmanObjectName: my-app-db-backup
+          # The server name the original cluster archived under (cluster.yaml).
+          serverName: my-app-db
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      enabled: true
+      isWALArchiver: true
+      parameters:
+        barmanObjectName: my-app-db-backup
+        # A new, empty server name. Reusing my-app-db would mix the two clusters' WAL archives,
+        # and the operator refuses to start a cluster whose archive is not empty.
+        serverName: my-app-db-restored
+  backup:
+    target: prefer-standby
+  resources:
+    requests:
+      cpu: "1"
+      memory: 2Gi
+    limits:
+      cpu: "2"
+      memory: 4Gi
+  storage:
+    storageClass: wekafs--sdf-k8s01
+    size: 20Gi
+  walStorage:
+    storageClass: wekafs--sdf-k8s01
+    size: 10Gi

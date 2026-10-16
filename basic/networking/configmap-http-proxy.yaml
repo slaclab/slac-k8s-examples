@@ -1,0 +1,16 @@
+# The S3DF HTTP proxy settings, for containers to load with envFrom (see deployment-http-proxy.yaml).
+# Each variable appears in both spellings, because tools differ in which one they read.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: http-proxy
+data:
+  http_proxy: http://sdfproxy.sdf.slac.stanford.edu:3128
+  HTTP_PROXY: http://sdfproxy.sdf.slac.stanford.edu:3128
+  # http:// here too: the client opens a tunnel through the proxy, and TLS stays end to end.
+  https_proxy: http://sdfproxy.sdf.slac.stanford.edu:3128
+  HTTPS_PROXY: http://sdfproxy.sdf.slac.stanford.edu:3128
+  # Reached directly, not through the proxy: loopback, the cluster's Services and pods, and SLAC
+  # networks. Add the short names of Services you call over HTTP, for example my-db.
+  no_proxy: localhost,127.0.0.1,::1,.svc,.cluster.local,10.0.0.0/8,192.168.0.0/16,172.16.0.0/12,134.79.0.0/16,.slac.stanford.edu
+  NO_PROXY: localhost,127.0.0.1,::1,.svc,.cluster.local,10.0.0.0/8,192.168.0.0/16,172.16.0.0/12,134.79.0.0/16,.slac.stanford.edu

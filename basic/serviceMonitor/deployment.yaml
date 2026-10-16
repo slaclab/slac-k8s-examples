@@ -1,21 +1,30 @@
+# An application that serves Prometheus metrics on a named container port.
+# The ServiceMonitor scrapes it through the Service; the PodMonitor scrapes the pods directly.
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: example-app
+  name: my-app
 spec:
-  replicas: 3
+  replicas: 2
   selector:
     matchLabels:
-      app: example-app
+      app: my-app
   template:
     metadata:
       labels:
-        app: example-app
+        app: my-app
     spec:
       containers:
-      - name: example-app
+      - name: my-app
         image: quay.io/brancz/prometheus-example-app:v0.5.0
         ports:
-        - name: web
+        - name: metrics  # the PodMonitor refers to this port by name
           containerPort: 8080
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            cpu: 100m
+            memory: 64Mi

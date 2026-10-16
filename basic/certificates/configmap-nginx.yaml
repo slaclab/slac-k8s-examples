@@ -1,0 +1,20 @@
+# nginx configuration for deployment.yaml: HTTPS on 8443 with the server certificate, and mutual
+# TLS: only clients with a certificate signed by your CA (ca.crt) get an answer.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-app-nginx
+data:
+  default.conf: |
+    server {
+        listen 8443 ssl;
+        ssl_certificate        /etc/nginx/tls/tls.crt;
+        ssl_certificate_key    /etc/nginx/tls/tls.key;
+        ssl_client_certificate /etc/nginx/tls/ca.crt;
+        ssl_verify_client      on;
+
+        location / {
+            default_type text/plain;
+            return 200 "hello, $ssl_client_s_dn\n";
+        }
+    }

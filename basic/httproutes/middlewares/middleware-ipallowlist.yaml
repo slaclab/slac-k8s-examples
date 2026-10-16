@@ -1,0 +1,12 @@
+# Admits only clients on SLAC networks. Everyone else gets 403.
+# The platform sets ipStrategy so the check uses the client's address, not the F5's (see README.md).
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: slac-only            # in the route's namespace; no "-x-" in the name
+spec:
+  ipAllowList:
+    sourceRange:
+      - 134.79.0.0/16
+      - 172.16.0.0/12
+    # Leave out ipStrategy: the platform replaces it with its own.

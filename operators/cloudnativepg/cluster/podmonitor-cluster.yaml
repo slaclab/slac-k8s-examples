@@ -1,0 +1,14 @@
+# Scrapes the Postgres exporter of every instance of cluster.yaml (port metrics, 9187) with the
+# platform Prometheus. Needs the Prometheus monitors switch on your vcluster.
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: my-db
+spec:
+  selector:
+    matchLabels:
+      # The operator puts this label on the instance pods. Don't select on app or role: the host
+      # adds those labels to every CNPG pod in the namespace, whichever cluster it belongs to.
+      cnpg.io/cluster: my-db
+  podMetricsEndpoints:
+    - port: metrics

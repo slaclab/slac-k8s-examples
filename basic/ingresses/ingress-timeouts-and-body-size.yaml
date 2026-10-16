@@ -1,0 +1,24 @@
+# A public Ingress for slow responses and large uploads.
+# Timeouts are whole seconds without a unit: with a unit, such as "300s", nginx keeps the default.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: my-app
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"   # default 60
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"   # default 60
+    # Largest request body; a bigger request gets 413. The platform default is 100m.
+    nginx.ingress.kubernetes.io/proxy-body-size: "500m"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: my-app.slac.stanford.edu
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: my-app
+                port:
+                  number: 8080

@@ -1,0 +1,30 @@
+# Read-only: nginx serves one directory of the share, /sdf/group/ad/www.
+# readOnly on the volumeMount is what stops writes; the claim stays ReadWriteMany.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: task-pv-pod-read-only
+spec:
+  containers:
+    - name: web-server
+      image: nginx:1.28.0
+      ports:
+        - containerPort: 80
+          name: http-server
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          cpu: 500m
+          memory: 128Mi
+      volumeMounts:
+        - name: task-pv-storage
+          mountPath: /usr/share/nginx/html
+          # Relative to the share root. The kubelet creates the directory if it is missing.
+          subPath: www
+          readOnly: true
+  volumes:
+    - name: task-pv-storage
+      persistentVolumeClaim:
+        claimName: task-pv-claim

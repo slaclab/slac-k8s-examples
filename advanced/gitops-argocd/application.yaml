@@ -1,0 +1,26 @@
+# An Argo CD Application: Argo CD keeps namespace my-namespace of this vcluster in line with
+# the manifests in deploy/ of a git repository. Apply it to Argo CD's namespace, argocd.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: my-app
+spec:
+  project: default
+  source:
+    # On the internet, so the repo server reaches it through the S3DF HTTP proxy.
+    repoURL: https://github.com/my-org/my-app.git
+    targetRevision: main
+    # Plain manifests, or a kustomization.yaml.
+    path: deploy
+  destination:
+    # The vcluster that Argo CD runs in.
+    server: https://kubernetes.default.svc
+    # A namespace of your own, never "default": platform policy forbids Pods, Services and
+    # Ingresses there. Objects without metadata.namespace land here.
+    namespace: my-namespace
+  syncPolicy:
+    automated:
+      # Delete objects that were removed from git.
+      prune: true
+      # Undo changes made outside git, for example with kubectl edit.
+      selfHeal: true

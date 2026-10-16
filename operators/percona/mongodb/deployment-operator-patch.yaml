@@ -1,0 +1,21 @@
+# Adds requests and limits to the upstream operator Deployment, and turns off its telemetry,
+# which reports to Percona's servers outside SLAC.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: percona-server-mongodb-operator
+spec:
+  template:
+    spec:
+      containers:
+        - name: percona-server-mongodb-operator
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          env:
+            - name: DISABLE_TELEMETRY
+              value: "true"

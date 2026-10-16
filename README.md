@@ -9,6 +9,95 @@ This repo is intended to provide workable examples and best practices for deploy
 
 The example manifests provided in this repo should be able to be adapted by developers to get their application running on the SLAC Kubernetes infrastructure. These examples will be updated as new best practices and technologies are introduced (e.g., new operators, new storage etc).
 
+## Guides
+
+Each guide is a README with example manifests next to it. It explains how a platform feature works,
+why the platform does it that way, and how to use it from inside your vcluster. Start with
+[Your vcluster](basic/vcluster/README.md): many features depend on a switch or allowlist that the
+platform team sets for your vcluster.
+
+### Your vcluster
+
+| Guide | What it covers |
+|---|---|
+| [Your vcluster](basic/vcluster/README.md) | What a vcluster is, what syncs to the host cluster, feature switches, namespaces, backups |
+| [Logging in and access](basic/vcluster/access/README.md) | Logging in through gangway and Dex, kubeconfig, giving teammates access with RBAC |
+| [Platform policies](basic/platform-policies/README.md) | What the host cluster rejects, changes or deletes, and why |
+
+### Networking
+
+| Guide | What it covers |
+|---|---|
+| [Getting traffic in and out](basic/networking/README.md) | Choosing between HTTPRoute, Ingress and LoadBalancer Services; outbound traffic |
+| [HTTPRoutes with S3DF login](basic/httproutes/README.md) | Publishing a web application on the gateway, with or without the S3DF login |
+| [Middlewares for HTTPRoutes](basic/httproutes/middlewares/README.md) | Path rewrites, headers, IP allowlists and rate limits on an HTTPRoute |
+| [Ingress](basic/ingresses/README.md) | The legacy ingress-nginx path, hostnames, and moving to an HTTPRoute |
+| [LoadBalancer Services](basic/services/README.md) | Non-HTTP services on MetalLB address pools, source ranges |
+| [Network policies](basic/networking/network-policies/README.md) | Network isolation for your vcluster and NetworkPolicies |
+| [DNS](basic/networking/dns/README.md) | How names resolve inside a vcluster |
+| [Logging users in to your application](basic/authentication/README.md) | s3df-authnz or your own OIDC client in S3DF Dex |
+
+### Storage
+
+| Guide | What it covers |
+|---|---|
+| [Choosing a StorageClass](basic/storage/README.md) | The storage families, the per-vcluster allowlist, what is and is not backed up |
+| [Weka volumes](basic/storage/weka/README.md) | New, empty persistent volumes for your application (the default class) |
+| [S3DF filesystems](basic/storage/sdf-filesystem/README.md) | Mounting an existing facility share such as `/sdf/group/<facility>` |
+| [Node-local ZFS volumes](basic/storage/node-local-zfs/README.md) | Fast volumes on dedicated node pools, and their trade-offs |
+
+### Secrets and certificates
+
+| Guide | What it covers |
+|---|---|
+| [Secrets in your vcluster](basic/secrets/README.md) | The ways to get secrets from Vault into a vcluster, and which to choose |
+| [External Secrets](basic/secrets/external-secrets/README.md) | ExternalSecrets that keep a Kubernetes Secret in sync with Vault |
+| [vault-secrets-operator](basic/secrets/vault-secrets-operator/README.md) | VaultSecrets, in vclusters where this operator is installed |
+| [Secrets at deploy time](basic/secrets/from-vault/README.md) | A Makefile and kustomize secretGenerator that read Vault when you apply |
+| [TLS certificates](basic/certificates/README.md) | cert-manager Issuers and Certificates for in-cluster TLS |
+
+### Monitoring and logs
+
+| Guide | What it covers |
+|---|---|
+| [Monitoring](basic/monitoring/README.md) | Where your metrics go, how they are scraped, where to look at them |
+| [ServiceMonitor and PodMonitor](basic/serviceMonitor/README.md) | Telling the platform Prometheus to scrape your application |
+| [Logs and events](basic/logging/README.md) | Container logs and Kubernetes events, including after a pod is gone |
+| [Autoscaling](basic/autoscaling/README.md) | `kubectl top` and HorizontalPodAutoscalers |
+
+### Compute and scheduling
+
+| Guide | What it covers |
+|---|---|
+| [Requests and limits](basic/resources/README.md) | Requests, limits, QoS classes and ephemeral storage, and why to set them |
+| [Node placement](basic/scheduling/README.md) | Node pools, taints, the tolerations the platform adds, node labels |
+| [Disruptions and availability](basic/scheduling/disruptions/README.md) | Evictions, node failures, preemption and running highly available |
+| [Jobs and CronJobs](basic/jobs/README.md) | What happens to finished pods, and Job settings that work here |
+| [GPU workloads](basic/gpu/README.md) | Requesting GPUs and checking what your pod got |
+| [Container images](basic/images/README.md) | How images are pulled, pinning, private registries |
+
+### Operators and databases
+
+| Guide | What it covers |
+|---|---|
+| [Operators in your vcluster](operators/README.md) | The model every operator guide follows: you install and upgrade the operator |
+| [PostgreSQL (CloudNativePG)](operators/cloudnativepg/README.md) | Installing the operator, a database cluster, connections and monitoring |
+| [PostgreSQL backups](operators/cloudnativepg/backups/README.md) | Backups to S3, scheduled backups, restore and point-in-time recovery |
+| [MariaDB](operators/mariadb-operator/README.md) | MariaDB with mariadb-operator |
+| [MongoDB](operators/percona/README.md) | MongoDB with the Percona operator |
+| [Kafka](operators/strimzi/README.md) | Kafka with Strimzi |
+
+### Advanced and worked examples
+
+| Guide | What it covers |
+|---|---|
+| [Secondary networks (Multus)](advanced/multus-secondary-networks/README.md) | A second interface on an ingest or DMZ network, with a fixed address |
+| [Fixed-address egress through socat](advanced/outgoing-ingest-network-with-socat-proxy/README.md) | Reaching an outside service from one fixed address |
+| [GitOps with Argo CD](advanced/gitops-argocd/README.md) | Deploying into your vcluster from Git |
+| [PostgreSQL example database](kubernetes/overlays/dev/cnpg-example-database/README.md) | A CloudNativePG cluster with credentials from Vault, as a kustomize overlay |
+| [GPU example application](kubernetes/overlays/dev/gpu-example-app/README.md) | A GPU Deployment as a kustomize overlay |
+| [EPICS example](kubernetes/overlays/dev/epics-example-app/README.md) | An EPICS workload on a secondary network |
+
 ## Prerequisites
 
 We assume a famility with the common kubernetes objects (Pods, Deployments, Statefulsets, PVCs, PVs, Services and Ingresses). Some familarity with commom Unix tools is also expected.
@@ -54,8 +143,8 @@ However, there exists a vast catalog of helm 'charts'. And rather than forcing e
 
 ### Operators
 
-We utilize the [Kubernetes operator pattern](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) when possible to automate tasks and streamline deployments. Several examples of off-the-shelf operators for common applications are provided: database administration (Postgres, MySQL, MongoDB), event/message streaming (Kafka). These operators are deployed by downloading/extracting their manifests via `curl` or `helm` and managed by `Kustomize`.
+We utilize the [Kubernetes operator pattern](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) when possible to automate tasks and streamline deployments. Several examples of off-the-shelf operators for common applications are provided: database administration (Postgres, MySQL, MongoDB), event/message streaming (Kafka). These operators are deployed by downloading/extracting their manifests via `curl` or `helm` and managed by `Kustomize`. You install and upgrade them inside your own vcluster; see [Operators in your vcluster](operators/README.md).
 
 ### Secrets
 
-[Kubernetes Secrets](https://kubernetes.io/docs/concepts/configuration/secret/) are stored in a [Hashicorp Vault](https://developer.hashicorp.com/vault/docs/what-is-vault) instance and passed via `make` to `Kustomize`'s [secretGenerator](https://kubernetes.io/docs/tasks/configmap-secret/managing-secret-using-kustomize/#create-the-kustomization-file), which creates the appropriate Kubernetes Secret objects when applied. The secrets are then available to be consumed by other Kubernetes objects.
+[Kubernetes Secrets](https://kubernetes.io/docs/concepts/configuration/secret/) are stored in a [Hashicorp Vault](https://developer.hashicorp.com/vault/docs/what-is-vault) instance and passed via `make` to `Kustomize`'s [secretGenerator](https://kubernetes.io/docs/tasks/configmap-secret/managing-secret-using-kustomize/#create-the-kustomization-file), which creates the appropriate Kubernetes Secret objects when applied. The secrets are then available to be consumed by other Kubernetes objects. This is one of several ways to get a secret from Vault into a vcluster; External Secrets keeps the Secret in sync with Vault instead. See [Secrets in your vcluster](basic/secrets/README.md) for the options and which to choose.

@@ -1,11 +1,16 @@
+# A claim on an S3DF share: it gives access to the existing /sdf/group/ad tree, not a new volume.
+# Stays Pending until a pod uses it (WaitForFirstConsumer).
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: task-pv-claim
 spec:
+  # One class per share. Only classes on your vcluster's allowlist can be used.
+  storageClassName: sdf-group-ad
+  # ReadWriteMany only. For read-only use, set readOnly: true on the pod's volumeMount.
   accessModes:
-  - ReadWriteMany
+    - ReadWriteMany
   resources:
     requests:
+      # Required by Kubernetes, but not enforced: the claim sees the whole share.
       storage: 1Gi
-  storageClassName: sdf-group-ad

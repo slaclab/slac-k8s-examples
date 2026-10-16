@@ -1,13 +1,15 @@
+# A ServiceMonitor: the platform Prometheus scrapes every endpoint of the Services it selects.
+# No labels are needed on the monitor itself: the platform adds the one its Prometheus selects.
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: example-app
-  labels:
-    release: sdf-k8s01
+  name: my-app
 spec:
   selector:
     matchLabels:
-      app: example-app
+      app: my-app  # Service labels, in every namespace of your vcluster (namespaceSelector is ignored)
   endpoints:
-  - port: web
+  - port: metrics  # the Service port name, not a number
+    path: /metrics
+    interval: 30s

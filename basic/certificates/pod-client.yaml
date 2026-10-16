@@ -1,0 +1,37 @@
+# A client for mutual TLS: curl verifies the server against ca.crt and presents the client
+# certificate from certificate-client.yaml. Its log shows the answer, or the TLS error.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-app-client
+spec:
+  restartPolicy: Never
+  containers:
+    - name: curl
+      image: curlimages/curl:8.13.0
+      command:
+        - curl
+        - --silent
+        - --show-error
+        - --cacert
+        - /etc/tls/ca.crt
+        - --cert
+        - /etc/tls/tls.crt
+        - --key
+        - /etc/tls/tls.key
+        - https://my-app/
+      resources:
+        requests:
+          cpu: 10m
+          memory: 16Mi
+        limits:
+          cpu: 100m
+          memory: 32Mi
+      volumeMounts:
+        - name: tls
+          mountPath: /etc/tls
+          readOnly: true
+  volumes:
+    - name: tls
+      secret:
+        secretName: my-app-client-tls

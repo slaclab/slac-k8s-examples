@@ -1,0 +1,19 @@
+# A LoadBalancer that asks for one specific address, so a re-created Service can get the same address back.
+# 192.0.2.10 is a documentation address outside every pool: ask the platform team (s3df-help) for a free one.
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-app-lb-fixed-ip
+  annotations:
+    metallb.io/address-pool: sdf-services
+    # One free address inside the pool above. Use this annotation, not spec.loadBalancerIP.
+    metallb.io/loadBalancerIPs: "192.0.2.10"
+spec:
+  type: LoadBalancer
+  allocateLoadBalancerNodePorts: false
+  selector:
+    app: my-app
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

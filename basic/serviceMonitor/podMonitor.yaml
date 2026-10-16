@@ -1,0 +1,15 @@
+# A PodMonitor: the platform Prometheus scrapes the pods it selects, without a Service.
+# Use it for workloads that have no Service, or whose pods must be scraped one by one.
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: my-app
+spec:
+  selector:
+    matchLabels:
+      app: my-app  # pod labels, in every namespace of your vcluster (namespaceSelector is ignored)
+  podMetricsEndpoints:
+  - port: metrics  # the container port name declared in the pod spec, not a number
+    path: /metrics
+    interval: 30s

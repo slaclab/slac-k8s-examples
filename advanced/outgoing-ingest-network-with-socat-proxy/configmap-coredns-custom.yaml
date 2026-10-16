@@ -1,0 +1,14 @@
+# Optional: makes db.example.org resolve to the relay Service, for clients that must keep the original name.
+# This one file sets a namespace: your vcluster's CoreDNS reads the ConfigMap coredns-custom from kube-system.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coredns-custom
+  namespace: kube-system
+data:
+  my-app-relay.server: |
+    db.example.org:1053 {
+        errors
+        rewrite name exact db.example.org my-app-relay.my-namespace.svc.cluster.local
+        kubernetes cluster.local
+    }

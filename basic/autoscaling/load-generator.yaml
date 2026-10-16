@@ -1,0 +1,44 @@
+# A Job that sends requests to my-app without pause for 5 minutes, to watch the HPA scale up.
+# Delete it to stop the load early; the HPA scales down once the load is gone.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: my-app-load
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 360
+  ttlSecondsAfterFinished: 600
+  template:
+    metadata:
+      labels:
+        app: my-app-load
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+      containers:
+        - name: load
+          image: busybox:1.37.0
+          # The Service name resolves inside the namespace. Four loops of back-to-back requests
+          # for 300 seconds.
+          command:
+            - sh
+            - -c
+            - |
+              end=$(( $(date +%s) + 300 ))
+              for i in 1 2 3 4; do
+                ( while [ "$(date +%s)" -lt "$end" ]; do
+                    wget -q -O /dev/null http://my-app:8080/ || true
+                  done ) &
+              done
+              wait
+          resources:
+            requests:
+              cpu: 200m
+              memory: 16Mi
+            limits:
+              cpu: "1"
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false

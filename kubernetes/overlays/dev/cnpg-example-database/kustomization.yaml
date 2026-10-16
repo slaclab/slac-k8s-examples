@@ -1,15 +1,19 @@
+# Builds the Cluster and the Secret exampledb-creds from the files the Makefile reads out of Vault.
+# Sets no namespace: `make apply NAMESPACE=my-namespace` passes it. Without the Makefile it stops.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
 
 resources:
-- ns.yaml
-# cnpg
 - cnpg-example-database.yaml
 
 secretGenerator:
 - name: exampledb-creds
+  # CNPG requires this type for the owner credentials.
+  type: kubernetes.io/basic-auth
   options:
+    # The Cluster refers to the Secret by this exact name, so no hash suffix.
     disableNameSuffixHash: true
+  # One file per key. The file name becomes the key: the Secret gets username and password.
   files:
   - etc/.secrets/username
   - etc/.secrets/password
-
-namespace: cnpg-example

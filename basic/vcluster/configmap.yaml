@@ -1,0 +1,9 @@
+# The page my-app serves. It reaches the host cluster only because a pod mounts it:
+# ConfigMaps and Secrets that no synced object uses stay in your vcluster.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-app-content
+data:
+  index.html: |
+    <p>Hello from my-app.</p>

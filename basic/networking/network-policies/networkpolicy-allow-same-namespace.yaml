@@ -1,0 +1,18 @@
+# Lets every pod in the namespace talk to every other pod in it, in both directions.
+# Needed when your vcluster's profile is `isolated`; harmless in the others.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-same-namespace
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        # Without a namespaceSelector, a podSelector means pods of this namespace only.
+        - podSelector: {}
+  egress:
+    - to:
+        - podSelector: {}

@@ -1,0 +1,41 @@
+# A PostgreSQL cluster that archives WAL and takes base backups into the ObjectStore
+# my-app-db-backup, through the barman-cloud plugin.
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: my-app-db
+spec:
+  instances: 2
+  imageName: ghcr.io/cloudnative-pg/postgresql:17.5
+  bootstrap:
+    initdb:
+      database: my-app
+      owner: my-app
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      enabled: true
+      # One plugin per cluster may archive WAL. Not allowed together with backup.barmanObjectStore.
+      isWALArchiver: true
+      parameters:
+        # The ObjectStore in objectstore.yaml, in the same namespace as the cluster.
+        barmanObjectName: my-app-db-backup
+        # The folder under destinationPath. Defaults to the cluster name; set it so that it
+        # stays the same if you ever rename the cluster, and never reuse it for another cluster.
+        serverName: my-app-db
+  backup:
+    # Base backups run on the most up-to-date standby when there is one, so the primary
+    # keeps serving queries. This is the default; shown here because the restore examples rely on it.
+    target: prefer-standby
+  resources:
+    requests:
+      cpu: "1"
+      memory: 2Gi
+    limits:
+      cpu: "2"
+      memory: 4Gi
+  storage:
+    storageClass: wekafs--sdf-k8s01
+    size: 20Gi
+  walStorage:
+    storageClass: wekafs--sdf-k8s01
+    size: 10Gi

@@ -1,0 +1,15 @@
+# A Weka claim that keeps the results and logs of job.yaml and cronjob.yaml after their pods
+# are deleted. pod-results-reader.yaml mounts it to read them.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: my-app-results
+spec:
+  storageClassName: wekafs--sdf-k8s01
+  # Runs of the Job and the CronJob can land on different nodes, at the same time.
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      # A hard quota: writes fail once it is full. cronjob.yaml deletes runs older than 30 days.
+      storage: 1Gi

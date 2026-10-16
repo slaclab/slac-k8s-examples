@@ -1,0 +1,9 @@
+# An ExternalName Service: my-app-db.my-namespace.svc.cluster.local answers with a CNAME to
+# db.example.org. Replace db.example.org with the real hostname of the external service.
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-app-db
+spec:
+  type: ExternalName
+  externalName: db.example.org

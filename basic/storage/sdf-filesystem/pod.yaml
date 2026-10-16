@@ -1,18 +1,26 @@
+# Read-write: the whole share, /sdf/group/ad, appears at /data.
+# No nodeSelector or node affinity for storage: the PV places the pod.
 apiVersion: v1
 kind: Pod
 metadata:
   name: task-pv-pod
 spec:
+  restartPolicy: Never
+  containers:
+    - name: task-pv-container
+      image: busybox:1.37.0
+      command: [sh, -c, "ls -la /data"]
+      resources:
+        requests:
+          cpu: 10m
+          memory: 16Mi
+        limits:
+          cpu: 100m
+          memory: 32Mi
+      volumeMounts:
+        - name: task-pv-storage
+          mountPath: /data
   volumes:
     - name: task-pv-storage
       persistentVolumeClaim:
         claimName: task-pv-claim
-  containers:
-    - name: task-pv-container
-      image: nginx
-      ports:
-        - containerPort: 80
-          name: "http-server"
-      volumeMounts:
-        - mountPath: "/usr/share/nginx/html"
-          name: task-pv-storage

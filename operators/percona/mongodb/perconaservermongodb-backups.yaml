@@ -1,0 +1,73 @@
+# my-app-mongodb as in perconaservermongodb.yaml, with daily backups to a bucket on S3DF object
+# storage. Needs Secret my-app-mongodb-backup-s3 (externalsecret-backup-s3.yaml) first.
+apiVersion: psmdb.percona.com/v1
+kind: PerconaServerMongoDB
+metadata:
+  name: my-app-mongodb
+  finalizers:
+    - percona.com/delete-psmdb-pods-in-order
+spec:
+  crVersion: 1.23.1
+  image: percona/percona-server-mongodb:8.0.32-14
+  upgradeOptions:
+    apply: disabled
+  enableVolumeExpansion: true
+  secrets:
+    users: my-app-mongodb-users
+  users:
+    - name: my-app
+      db: admin
+      roles:
+        - name: readWrite
+          db: my-app
+  replsets:
+    - name: rs0
+      size: 3
+      affinity:
+        antiAffinityTopologyKey: kubernetes.io/hostname
+      resources:
+        requests:
+          cpu: 500m
+          memory: 2Gi
+        limits:
+          cpu: "2"
+          memory: 2Gi
+      volumeSpec:
+        persistentVolumeClaim:
+          storageClassName: wekafs--sdf-k8s01
+          resources:
+            requests:
+              storage: 20Gi
+  sharding:
+    enabled: false
+  backup:
+    enabled: true
+    # Percona Backup for MongoDB, run as a sidecar in each member pod.
+    image: percona/percona-backup-mongodb:2.15.0
+    resources:
+      requests:
+        cpu: 100m
+        memory: 512Mi
+      limits:
+        cpu: "1"
+        memory: 1Gi
+    storages:
+      s3df:
+        main: true
+        type: s3
+        s3:
+          endpointUrl: https://s3dfrgw.slac.stanford.edu
+          bucket: my-app-mongodb-backups
+          # One folder per database, so one bucket can hold several.
+          prefix: my-app-mongodb
+          region: us-east-1
+          credentialsSecret: my-app-mongodb-backup-s3
+    tasks:
+      - name: daily
+        enabled: true
+        schedule: "0 3 * * *"
+        storageName: s3df
+        retention:
+          type: count
+          count: 7
+          deleteFromStorage: true

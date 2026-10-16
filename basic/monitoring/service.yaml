@@ -1,0 +1,16 @@
+# The Service in front of the application, for other pods to reach it.
+# It carries no prometheus.io annotations: the pods in deployment-scrape.yaml are scraped directly.
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-app
+  labels:
+    app: my-app
+spec:
+  selector:
+    app: my-app
+  ports:
+    - name: metrics
+      port: 8080
+      targetPort: metrics

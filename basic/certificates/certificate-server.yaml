@@ -1,0 +1,24 @@
+# A server certificate for the Service my-app, signed by your CA.
+# The Secret my-app-tls receives tls.crt, tls.key and ca.crt.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: my-app-tls
+spec:
+  secretName: my-app-tls
+  # The names clients use inside your vcluster. Replace my-namespace with your namespace.
+  dnsNames:
+    - my-app
+    - my-app.my-namespace.svc
+    - my-app.my-namespace.svc.cluster.local
+  usages:
+    - digital signature
+    - server auth
+  duration: 2160h     # 90 days
+  renewBefore: 360h   # renewed 15 days before it expires
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: my-app-ca
+    kind: Issuer
