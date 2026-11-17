@@ -1,0 +1,14 @@
+# Headless Service for statefulset.yaml: gives each replica a stable DNS name,
+# my-app-0.my-app, my-app-1.my-app and so on, which replicas use to find each other.
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-app
+spec:
+  clusterIP: None
+  selector:
+    app: my-app
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

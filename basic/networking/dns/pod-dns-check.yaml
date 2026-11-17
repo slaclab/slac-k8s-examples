@@ -1,0 +1,21 @@
+# A throwaway pod with dig and nslookup, for testing name resolution from my-namespace.
+# Delete it when you are done: kubectl delete pod dns-check -n my-namespace
+apiVersion: v1
+kind: Pod
+metadata:
+  name: dns-check
+  labels:
+    app: dns-check
+spec:
+  restartPolicy: Never
+  containers:
+    - name: dns-check
+      image: nicolaka/netshoot:v0.13
+      command: [sh, -c, "sleep 3600"]
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits:
+          cpu: 200m
+          memory: 128Mi

@@ -1,0 +1,40 @@
+# A Deployment that pulls from a private registry. imagePullSecrets names a Secret of type
+# kubernetes.io/dockerconfigjson in the same namespace, made from Vault (see README.md).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app
+  labels:
+    app: my-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      # Used for every container and init container of the pod. The vcluster syncs the Secret
+      # to the host only because a pod names it here.
+      imagePullSecrets:
+        - name: my-app-registry
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+      containers:
+        - name: my-app
+          image: ghcr.io/my-org/my-app:1.0.0
+          ports:
+            - name: http
+              containerPort: 8080
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false

@@ -1,0 +1,12 @@
+# A one-off base backup of my-app-db, for example before a schema migration or an upgrade.
+# Each run needs a new name; "kubectl cnpg backup my-app-db" creates one with a timestamp.
+apiVersion: postgresql.cnpg.io/v1
+kind: Backup
+metadata:
+  name: my-app-db-before-migration
+spec:
+  method: plugin
+  pluginConfiguration:
+    name: barman-cloud.cloudnative-pg.io
+  cluster:
+    name: my-app-db

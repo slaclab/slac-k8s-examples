@@ -1,0 +1,14 @@
+# The application's MariaDB user my_app, password from the Secret my-db-users.
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: User
+metadata:
+  name: my-app
+spec:
+  mariaDbRef:
+    name: my-db
+  name: my_app
+  host: "%"
+  passwordSecretKeyRef:
+    name: my-db-users
+    key: user_password
+  maxUserConnections: 100

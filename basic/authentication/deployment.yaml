@@ -1,0 +1,52 @@
+# my-app as an OIDC client of S3DF Dex: the issuer and redirect URI as plain settings, the
+# client ID and secret from Secret my-app-oidc (externalsecret-oidc-client.yaml).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app
+  labels:
+    app: my-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+        - name: my-app
+          image: ghcr.io/my-org/my-app:1.0.0
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            # The variable names are your application's; these stand for its settings.
+            - name: OIDC_ISSUER_URL
+              # Production Dex. Libraries read the endpoints from
+              # <issuer>/.well-known/openid-configuration.
+              value: https://dex.slac.stanford.edu
+            - name: OIDC_REDIRECT_URL
+              # Exactly as registered for the client: Dex refuses any other.
+              value: https://my-app.slac.stanford.edu/oauth2/callback
+            - name: OIDC_SCOPES
+              value: openid email profile
+            - name: OIDC_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: my-app-oidc
+                  key: client-id
+            - name: OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: my-app-oidc
+                  key: client-secret
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi

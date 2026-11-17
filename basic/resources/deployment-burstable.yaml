@@ -1,0 +1,33 @@
+# Burstable: requests sized to normal use, memory and ephemeral-storage limits, and no CPU limit.
+# The pod may use idle CPU above its request; while above its memory request it is an eviction candidate.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app-burstable
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: my-app-burstable
+  template:
+    metadata:
+      labels:
+        app: my-app-burstable
+    spec:
+      containers:
+        - name: web
+          image: busybox:1.37.0
+          command: [sh, -c, "mkdir -p /www && echo ok > /www/index.html && exec httpd -f -p 8080 -h /www"]
+          ports:
+            - containerPort: 8080
+              name: http
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+              # Logs and files written outside volumes (here /www) are ephemeral storage.
+              ephemeral-storage: 64Mi
+            limits:
+              # No cpu limit: the container is never throttled. Under contention, CPU is shared in proportion to requests.
+              memory: 128Mi
+              ephemeral-storage: 256Mi

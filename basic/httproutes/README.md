@@ -5,20 +5,42 @@ successor to an Ingress on ingress-nginx. Four annotations on the route put the 
 front of the application, through the s3df-authnz service: whether a login is required, which
 Coact groups may enter, and whether the application receives the user's token.
 
+HTTPRoutes leave your vcluster only if the platform team has turned on the gateway switch for your
+vcluster. The switch is off by default: without it, HTTPRoutes and Traefik Middlewares stay in your
+vcluster and nothing is published. Ask the platform team (s3df-help) to turn it on; see
+[Your vcluster](../vcluster/README.md#features-and-allowlists-the-platform-sets).
+
 ## How a route reaches the gateway
 
 Write the HTTPRoute inside your vcluster with `hostnames` and `backendRefs` only, without
 `parentRefs`. The platform does the rest:
 
 1. The vcluster syncs the route to the host cluster.
-2. Kyverno creates its copy in `gateway-system`, attached to the Gateway
-   `traefik-system/traefik-gateway` (listener `websecure`), with `backendRefs` pointing at the
-   synced Service.
+2. If every hostname of the route is approved for your vcluster, Kyverno creates its copy in
+   `gateway-system`, attached to the Gateway `traefik-system/traefik-gateway` (listener
+   `websecure`), with `backendRefs` pointing at the synced Service.
 3. If the route carries `.../required: "true"`, Kyverno also adds the s3df-authnz ForwardAuth
-   filter, so every request is checked before it reaches your application.
+   filter after the rule's own filters, so every request is checked before it reaches your
+   application.
 
 The hostname must be one your vcluster is allowed to use, and its DNS must point at the gateway;
-ask the platform team for both.
+ask the platform team for both. The gateway is shared by all vclusters, so each vcluster may
+publish only the hostnames approved for it:
+
+- A route with a hostname that is not approved is not rejected. It syncs, but the platform never
+  attaches it to the gateway, and nothing in your vcluster reports it. One unapproved hostname
+  is enough to keep the whole route off the gateway.
+- A route without `hostnames` is never published. Always set `hostnames`.
+- The hostnames are checked when the route is created or changed. After the platform team
+  approves a new hostname, delete the route and apply it again.
+
+The gateway admits routes only from platform namespaces, so only the platform's copy in
+`gateway-system` is attached to it. Your route's `status` therefore stays empty inside your
+vcluster, published or not: test the hostname instead (see [Testing](#testing)).
+
+To admit only some client addresses, strip a path prefix or set headers before a request reaches
+your application, add Traefik Middlewares to the route: see
+[Middlewares for HTTPRoutes](middlewares/README.md).
 
 ## Annotations
 
@@ -60,10 +82,17 @@ the same way.
 | [`httproute-authnz-groups.yaml`](httproute-authnz-groups.yaml) | Only members of the listed Coact groups |
 | [`httproute-authnz-forward-credential.yaml`](httproute-authnz-forward-credential.yaml) | Groups as above, and the application receives the user's token |
 
+The manifests set no namespace. Apply them to a namespace of your own with `-n`: platform policy
+forbids the vcluster's `default` namespace. Each route sends traffic to a Service `my-app` on port
+8080 in its own namespace.
+
 ## Mistakes that leave a route open or broken
 
 | Mistake | Result |
 |---|---|
+| A vcluster without the gateway switch | The route never leaves the vcluster, so nothing is published. Ask the platform team |
+| A hostname that is not approved for your vcluster | The route is never published, and nothing reports an error. After the platform team approves the hostname, delete the route and apply it again |
+| A route whose name and namespace together are longer than 46 characters | The route is never published, and nothing reports an error. Use a shorter name |
 | `required-group` (singular), or another misspelt key | Ignored, so the route admits every authenticated user. A coming s3df-authnz release logs `... is an unknown annotation and has no effect` for it |
 | `required: "yes"`, or any value other than `"true"` | No login at all. (`true` without quotes is not even accepted: annotation values must be strings, so `kubectl apply` refuses the manifest) |
 | The production prefix on a route that should use the development login stack, or the reverse | The other environment's s3df-authnz protects the route, or none does |
@@ -75,6 +104,8 @@ A new or changed route can answer 403 for up to 30 seconds, until s3df-authnz re
 ## Testing
 
 ```bash
+kubectl apply -n my-namespace -f httproute-authnz.yaml
+
 # Without a login: 401 for a script (a browser is sent to the login page instead).
 curl -s -o /dev/null -w '%{http_code}\n' https://my-app.slac.stanford.edu/
 

@@ -1,0 +1,22 @@
+# Your private CA. Clients that should trust your servers get its ca.crt.
+# Anyone who can read the Secret my-app-ca can sign certificates your clients accept.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: my-app-ca
+spec:
+  isCA: true
+  commonName: my-app-ca
+  secretName: my-app-ca
+  duration: 43800h    # 5 years: a CA outlives the certificates it signs
+  renewBefore: 720h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    # Keep the key on renewal, so certificates signed earlier still verify against the new ca.crt.
+    rotationPolicy: Never
+  issuerRef:
+    name: selfsigned
+    # Always set kind: the vcluster's cert-manager plugin maps the Issuer to its host name only
+    # when kind is Issuer.
+    kind: Issuer

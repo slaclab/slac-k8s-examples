@@ -1,0 +1,16 @@
+# Reference only: the StorageClass the platform creates for /sdf/data/lcls. Tenants cannot create
+# StorageClasses; don't apply this. It shows what a claim in this class gets.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: sdf-data-lcls
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "false"
+    defaultVolumeType: "hostPath"
+# The LPP instance that serves this class, and only this class.
+provisioner: local-path-provisioner.local/sdf-data-lcls
+# A claim binds when its first pod is scheduled, so the PV is created for a node that has the share.
+volumeBindingMode: WaitForFirstConsumer
+# Deleting a claim removes the claim and its PV. LPP never deletes data on the share.
+reclaimPolicy: Delete
+allowVolumeExpansion: true

@@ -1,5 +1,0 @@
-namespace: kafka-example
-
-resources:
-- ns.yaml
-- kafka-cluster.yaml

@@ -1,0 +1,35 @@
+# An application scraped through prometheus.io annotations on its pods: no ServiceMonitor, no
+# plugin. The annotations go on the pod template, not on the Deployment's own metadata.
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app  # pod labels become labels on the scraped series (except release)
+      annotations:
+        # Values must be quoted strings: kubectl apply refuses an unquoted true or 8080.
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: my-app
+          image: quay.io/brancz/prometheus-example-app:v0.5.0
+          ports:
+            - name: metrics
+              containerPort: 8080
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi

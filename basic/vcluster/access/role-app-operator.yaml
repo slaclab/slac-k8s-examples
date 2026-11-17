@@ -1,0 +1,18 @@
+# A Role that may restart Deployment my-app and read pods, logs and events, and nothing more.
+# Apply with -n <namespace>; bind it with rolebinding-app-operator.yaml.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: my-app-operator
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "watch"]
+  # "kubectl rollout restart" patches the Deployment. resourceNames limits it to my-app.
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    resourceNames: ["my-app"]
+    verbs: ["patch"]
+  - apiGroups: [""]
+    resources: ["pods", "pods/log", "events"]
+    verbs: ["get", "list", "watch"]

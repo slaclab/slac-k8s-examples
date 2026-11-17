@@ -1,0 +1,25 @@
+# Scales my-app on the average memory use of one container, as an absolute value.
+# Apply this one or hpa-cpu.yaml, not both: they are alternatives with the same name and target.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: my-app
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: my-app
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    # ContainerResource looks at one named container, so a sidecar's memory does not count.
+    - type: ContainerResource
+      containerResource:
+        name: memory
+        container: my-app
+        target:
+          type: AverageValue
+          # Add replicas when the containers average more than 48Mi; the container's memory
+          # request is 32Mi and its limit 64Mi. Memory rarely falls when load does, so this is
+          # mainly a way to add replicas, not to remove them.
+          averageValue: 48Mi

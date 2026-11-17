@@ -1,0 +1,11 @@
+# The database my_app in the MariaDB my-db.
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: Database
+metadata:
+  name: my-app
+spec:
+  mariaDbRef:
+    name: my-db
+  name: my_app
+  characterSet: utf8mb4
+  collate: utf8mb4_general_ci

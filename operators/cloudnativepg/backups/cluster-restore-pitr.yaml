@@ -1,0 +1,41 @@
+# A new cluster, my-app-db-pitr, with the data of my-app-db as it was at one moment in time:
+# the base backup taken before that moment, plus the archived WAL up to it.
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: my-app-db-pitr
+spec:
+  instances: 1
+  imageName: ghcr.io/cloudnative-pg/postgresql:17.5
+  bootstrap:
+    recovery:
+      source: my-app-db
+      recoveryTarget:
+        # RFC 3339, with an explicit time zone. Without one, the time is read as UTC.
+        # Recovery stops at the first transaction after this moment and fails if there is none,
+        # so choose a time before the latest archived WAL.
+        targetTime: "2026-10-13T16:30:00-07:00"
+      database: my-app
+      owner: my-app
+  externalClusters:
+    - name: my-app-db
+      plugin:
+        name: barman-cloud.cloudnative-pg.io
+        parameters:
+          barmanObjectName: my-app-db-backup
+          serverName: my-app-db
+  # No spec.plugins: this cluster archives nothing. Add one with a new serverName, as in
+  # cluster-restore.yaml, before you keep it running.
+  resources:
+    requests:
+      cpu: "1"
+      memory: 2Gi
+    limits:
+      cpu: "2"
+      memory: 4Gi
+  storage:
+    storageClass: wekafs--sdf-k8s01
+    size: 20Gi
+  walStorage:
+    storageClass: wekafs--sdf-k8s01
+    size: 10Gi

@@ -1,0 +1,8 @@
+# The operator: the upstream bundle that `make resource` downloads, with the patch below.
+# Apply with `make apply`, which sets the namespace; the database objects are applied after it.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - bundle.yaml
+patches:
+  - path: deployment-operator-patch.yaml

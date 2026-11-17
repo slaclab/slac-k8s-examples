@@ -1,0 +1,38 @@
+# A PgBouncer pool in front of the primary of cluster.yaml. Clients connect to the Service
+# my-db-pooler-rw on 5432 instead of my-db-rw; the pool keeps the number of server connections small.
+apiVersion: postgresql.cnpg.io/v1
+kind: Pooler
+metadata:
+  # Must differ from the Cluster name.
+  name: my-db-pooler-rw
+spec:
+  cluster:
+    name: my-db
+  instances: 2
+  type: rw
+  pgbouncer:
+    # transaction: a server connection is held only for the length of a transaction. Session
+    # features (SET, advisory locks, LISTEN) need poolMode: session instead.
+    poolMode: transaction
+    parameters:
+      max_client_conn: "1000"
+      default_pool_size: "10"
+  template:
+    spec:
+      containers:
+        - name: pgbouncer
+          resources:
+            requests:
+              cpu: 100m
+              memory: 100Mi
+            limits:
+              cpu: 500m
+              memory: 500Mi
+      # Keep the two PgBouncer pods on different nodes.
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  cnpg.io/poolerName: my-db-pooler-rw
+              topologyKey: kubernetes.io/hostname

@@ -1,0 +1,14 @@
+# A new, empty volume that pods on many nodes mount at once (used by deployment-shared.yaml).
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: my-app-shared
+spec:
+  storageClassName: wekafs--sdf-k8s01
+  # Read-write from any number of pods and nodes. The application coordinates its writers.
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      # A hard quota for all pods together.
+      storage: 10Gi

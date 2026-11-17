@@ -1,0 +1,47 @@
+# A web server for an HPA to scale. Every container has CPU and memory requests: an HPA
+# compares CPU use with the requests, and without them it never scales. Leave out spec.replicas.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app
+  labels:
+    app: my-app
+spec:
+  # No replicas: the HPA owns the replica count. A value here is applied again on every
+  # kubectl apply and fights the HPA.
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+      containers:
+        - name: my-app
+          image: busybox:1.37.0
+          command: [sh, -c, "echo ok > /www/index.html && exec httpd -f -p 8080 -h /www"]
+          ports:
+            - name: http
+              containerPort: 8080
+          resources:
+            requests:
+              # The HPA's CPU target is a percentage of this value.
+              cpu: 100m
+              memory: 32Mi
+            limits:
+              cpu: 500m
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+          volumeMounts:
+            - name: www
+              mountPath: /www
+      volumes:
+        # A writable directory for the page: user 65534 cannot create one in the image's root.
+        - name: www
+          emptyDir:
+            sizeLimit: 1Mi

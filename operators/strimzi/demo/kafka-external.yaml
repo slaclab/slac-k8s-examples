@@ -1,0 +1,94 @@
+# kafka.yaml plus a TLS listener on MetalLB addresses (sdf-services) for clients outside your
+# vcluster, one address per broker and one for bootstrap. Apply it instead of kafka.yaml.
+apiVersion: kafka.strimzi.io/v1beta2
+kind: Kafka
+metadata:
+  name: my-kafka
+  annotations:
+    strimzi.io/node-pools: enabled
+    strimzi.io/kraft: enabled
+spec:
+  kafka:
+    # Must be a version the operator release supports: 0.47.0 runs 3.9.0, 3.9.1 and 4.0.0.
+    version: 4.0.0
+    metadataVersion: 4.0-IV3
+    listeners:
+      # my-kafka-kafka-bootstrap:9092 inside your vcluster, without TLS.
+      - name: plain
+        port: 9092
+        type: internal
+        tls: false
+      # my-kafka-kafka-bootstrap:9093, with TLS from the cluster CA.
+      - name: tls
+        port: 9093
+        type: internal
+        tls: true
+      # One LoadBalancer Service per broker plus a bootstrap Service, each with its own address.
+      - name: external
+        port: 9094
+        type: loadbalancer
+        tls: true
+        # Clients log in with the certificate of a KafkaUser, as in kafkauser.yaml.
+        authentication:
+          type: tls
+        configuration:
+          # Required by the host for every LoadBalancer Service.
+          allocateLoadBalancerNodePorts: false
+          # SLAC networks only.
+          loadBalancerSourceRanges:
+            - 134.79.0.0/16
+            - 172.16.0.0/12
+    config:
+      offsets.topic.replication.factor: 3
+      transaction.state.log.replication.factor: 3
+      transaction.state.log.min.isr: 2
+      default.replication.factor: 3
+      min.insync.replicas: 2
+    metricsConfig:
+      type: jmxPrometheusExporter
+      valueFrom:
+        configMapKeyRef:
+          name: kafka-metrics
+          key: kafka-metrics-config.yml
+    template:
+      # The host requires a pool on every LoadBalancer Service: the bootstrap Service...
+      externalBootstrapService:
+        metadata:
+          annotations:
+            metallb.io/address-pool: sdf-services
+      # ...and each per-broker Service, including those of brokers you add later.
+      perPodService:
+        metadata:
+          annotations:
+            metallb.io/address-pool: sdf-services
+  entityOperator:
+    topicOperator:
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
+    userOperator:
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
+  cruiseControl:
+    resources:
+      requests:
+        cpu: 200m
+        memory: 1Gi
+      limits:
+        cpu: "1"
+        memory: 1Gi
+    metricsConfig:
+      type: jmxPrometheusExporter
+      valueFrom:
+        configMapKeyRef:
+          name: cruise-control-metrics
+          key: metrics-config.yml

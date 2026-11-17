@@ -1,5 +1,5 @@
-namespace: gpu-example-app
-
+# The GPU example: one Deployment. Apply with: kubectl apply -k . -n my-namespace
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
 resources:
-  - ns.yaml
   - gpu-example-app.yaml

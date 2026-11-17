@@ -1,0 +1,35 @@
+# A Job with one GPU: it prints nvidia-smi (GPU model, memory, driver and CUDA version), then
+# runs NVIDIA's CUDA vectorAdd sample, which prints "Test PASSED" when the container can use its GPU.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: my-app-gpu-check
+spec:
+  backoffLimit: 0
+  # Gives up after 10 minutes, including time spent waiting for a free GPU.
+  activeDeadlineSeconds: 600
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      restartPolicy: Never
+      # No tolerations: the host adds the GPU toleration because of the nvidia.com/gpu limit.
+      containers:
+        - name: cuda-vectoradd
+          image: nvcr.io/nvidia/k8s/cuda-sample:vectoradd-cuda11.7.1-ubuntu20.04
+          command: ["sh", "-c", "nvidia-smi; /cuda-samples/vectorAdd"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+              # Whole GPUs, set in limits; Kubernetes sets the request to the same number.
+              nvidia.com/gpu: 1

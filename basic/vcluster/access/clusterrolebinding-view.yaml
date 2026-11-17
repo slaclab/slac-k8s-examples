@@ -1,0 +1,15 @@
+# Read-only access to every namespace of the vcluster (built-in ClusterRole "view").
+# A ClusterRoleBinding has no namespace.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  # Your own name: the platform re-applies vcluster-admins, cluster-admin and admin.
+  name: my-colleague-view-all
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
+subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: my-colleague@slac.stanford.edu

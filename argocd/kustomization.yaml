@@ -1,5 +1,0 @@
-namespace: argocd
-
-bases:
-- ns.yaml
-- argocd-install.yaml 

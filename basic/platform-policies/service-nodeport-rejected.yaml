@@ -1,0 +1,16 @@
+# Counter-example: the host rejects every NodePort Service, so this one never gets a host copy.
+# Apply it to see the SyncError event in your vcluster (see README.md), then delete it.
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-app-nodeport
+spec:
+  # Rejected on the host. Use ClusterIP inside the vcluster, and an HTTPRoute, an Ingress or a
+  # LoadBalancer Service to reach the application from outside.
+  type: NodePort
+  selector:
+    app: my-app
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

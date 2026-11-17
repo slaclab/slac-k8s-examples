@@ -1,18 +1,27 @@
+# Restores the newest backup of my-db-backup into my-db. Not in kustomization.yaml: apply it only to restore.
+# Add spec.targetRecoveryTime (RFC 3339) to pick the backup closest to that time instead.
 apiVersion: k8s.mariadb.com/v1alpha1
 kind: Restore
 metadata:
-  name: name_restore_resource
-  namespace: prod
+  name: my-db-restore
 spec:
   mariaDbRef:
-    name: name_mariadb_db_resource
+    name: my-db
   backupRef:
-    name: name_backup_resource
-  targetRecoveryTime: 2025-07-31T20:00:01Z  # time/filename from s3.
+    name: my-db-backup
+  # Where the dump is downloaded before it is restored. Without it, an emptyDir on the node's disk.
+  stagingStorage:
+    persistentVolumeClaim:
+      storageClassName: wekafs--sdf-k8s01
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 20Gi
   resources:
     requests:
       cpu: 500m
       memory: 512Mi
     limits:
-      cpu: 4
-      memory: 8Gi
+      cpu: "2"
+      memory: 4Gi

@@ -1,48 +1,48 @@
----
+# An EPICS client pod with a second interface, net1, on the AD ingest network (sdf-ad-ingest).
+# 192.0.2.11 is a documentation placeholder (RFC 5737): replace it with the address the platform team assigns you.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: epics-example-app
+  labels:
+    app: epics-example-app
 spec:
+  # An address belongs to one pod: one replica, and the old pod stops before the new one starts.
+  replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: epics-example-app
   template:
     metadata:
-      annotations:
-        k8s.v1.cni.cncf.io/networks: '[
-                { 
-                  "name": "multus-static-ip-pool",
-                  "namespace": "multus-system",
-                  "ips": [ "192.168.1.10/24" ],
-                  "gateway": [ "192.168.0.1" ]
-                }
-          ]'
       labels:
-        app: epics-test
+        app: epics-example-app
+      annotations:
+        # JSON in a string. Multus has no "gateway" field: the network's routes decide what uses net1.
+        k8s.v1.cni.cncf.io/networks: '[{"name": "sdf-ad-ingest", "namespace": "multus-system", "ips": ["192.0.2.11/24"]}]'
     spec:
+      # Nodes that run Multus and are attached to the AD ingest network.
       nodeSelector:
-        edu.stanford.slac.sdf.k8s.networking.multus: 'enable'
+        edu.stanford.slac.sdf.k8s.networking.multus: enable
+        edu.stanford.slac.sdf.networking/vlan832: "true"
+      # Those nodes carry this taint. Tolerate exactly this one, never every taint.
       tolerations:
-      - effect: NoSchedule
-        key: node-role.kubernetes.io/ext-load-balancer
+        - key: node-role.kubernetes.io/ext-load-balancer
+          operator: Exists
+          effect: NoSchedule
       containers:
-      - name: epics-example-app
-        image: ghcr.io/epics-containers/epics-base-runtime:7.0.8ad3
-        imagePullPolicy: Always
-        command: [ "/bin/bash", "-c", "--" ]
-        args: [ "caRepeater && sleep infinity" ]
-        envFrom:
-        - configMapRef:
-            name: epics-config-env
-        volumeMounts:
-        - name: epics-config-volume
-          mountPath: /etc/epics-config-env
-        resources:
-          limits:
-            memory: 8Gi
-            cpu: 4000m
-      volumes:
-        - name: epics-config-volume
-          configMap:
-            name: epics-config-env
+        - name: epics-example-app
+          image: ghcr.io/epics-containers/epics-base-runtime:7.0.10ec5
+          command: [bash, -c, "ip addr show net1; ip route; exec sleep infinity"]
+          # EPICS_CA_* and EPICS_PVA_* from epics-config.env.
+          envFrom:
+            - configMapRef:
+                name: epics-config-env
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi

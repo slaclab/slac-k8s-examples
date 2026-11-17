@@ -1,0 +1,39 @@
+# A pod that mounts the claim in pvc.yaml read-only, to read results and logs with kubectl exec
+# after the Jobs' pods are gone. It exits after an hour, and the platform then deletes it.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-app-results-reader
+  labels:
+    app: my-app
+spec:
+  restartPolicy: Never
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: reader
+      image: busybox:1.37.0
+      command: [sleep, "3600"]
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: [ALL]
+      resources:
+        requests:
+          cpu: 10m
+          memory: 16Mi
+        limits:
+          cpu: 100m
+          memory: 32Mi
+      volumeMounts:
+        - name: results
+          mountPath: /results
+          readOnly: true
+  volumes:
+    - name: results
+      persistentVolumeClaim:
+        claimName: my-app-results

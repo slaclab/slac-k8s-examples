@@ -1,0 +1,15 @@
+# A claim on the existing /sdf/data/lcls share, through the StorageClass sdf-data-lcls.
+# Stays Pending until a pod uses it (WaitForFirstConsumer).
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: lcls-data
+spec:
+  storageClassName: sdf-data-lcls
+  # ReadWriteMany only: LPP rejects any other mode, and the claim then stays Pending.
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      # Required by Kubernetes, but not enforced: the claim sees the whole share.
+      storage: 1Gi

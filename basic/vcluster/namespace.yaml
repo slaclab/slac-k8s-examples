@@ -1,0 +1,6 @@
+# A namespace of your own, inside your vcluster. Everything in this directory goes into it.
+# Never use the vcluster's default namespace: platform policy forbids it.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: my-namespace

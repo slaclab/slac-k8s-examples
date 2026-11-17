@@ -1,0 +1,37 @@
+# Hardware selection: runs only on nodes with an RDMA-capable network adapter.
+# It selects on a Node Feature Discovery (NFD) label, never on a node's name.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app-rdma
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: my-app-rdma
+  template:
+    metadata:
+      labels:
+        app: my-app-rdma
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  # NFD sets this label only on nodes that have the feature. It selects the node;
+                  # it does not give the pod access to the device.
+                  - key: feature.node.kubernetes.io/rdma.capable
+                    operator: In
+                    values: ["true"]
+      containers:
+        - name: my-app-rdma
+          image: busybox:1.37.0
+          command: [sh, -c, "sleep infinity"]
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 64Mi

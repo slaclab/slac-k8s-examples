@@ -1,4 +1,5 @@
----
+# A single-replica Deployment that holds one GPU, for checking GPU access with kubectl exec.
+# It keeps its GPU until you delete it.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -7,6 +8,10 @@ metadata:
     app: gpu-example-app
 spec:
   replicas: 1
+  # The default rolling update starts the new pod before it stops the old one, so it would need a
+  # second free GPU. Recreate stops the old pod first.
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: gpu-example-app
@@ -14,40 +19,23 @@ spec:
     metadata:
       labels:
         app: gpu-example-app
-    spec: 
-      tolerations:
-      - operator: Exists
-      restartPolicy: Always
+    spec:
+      # No tolerations: the host adds the GPU toleration because of the nvidia.com/gpu limit.
       containers:
-      - name: gpu-example-app
-        image: nvcr.io/nvidia/k8s/cuda-sample:vectoradd-cuda11.7.1-ubuntu20.04
-        imagePullPolicy: IfNotPresent
-        command: [ "sh", "-c", "sleep infinity" ]
-      #  volumeMounts:
-      #  - name: gpu-example-app-data
-      #    mountPath: /data
-      #    readOnly: true
-        resources:
-          limits:
-            cpu: 400m
-            memory: 2Gi
-            nvidia.com/gpu: 1
-#      volumes:
-#      - name: gpu-example-app-data
-#        persistentVolumeClaim:
-#          claimName: gpu-example-app-data
-
-#---
-#
-#kind: PersistentVolumeClaim
-#apiVersion: v1
-#metadata:
-#  name: gpu-example-app-data
-#spec:
-#  # Define storageClassName to override default storageClass on cluster
-#  storageClassName: wekafs--sdf-k8s01
-#  accessModes:
-#  - ReadWriteMany
-#  resources:
-#    requests:
-#      storage: 1Gi
+        - name: gpu-example-app
+          image: nvcr.io/nvidia/k8s/cuda-sample:vectoradd-cuda11.7.1-ubuntu20.04
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "-c", "sleep infinity"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 400m
+              memory: 2Gi
+              # Whole GPUs, set in limits; Kubernetes sets the request to the same number.
+              nvidia.com/gpu: 1

@@ -1,0 +1,10 @@
+# The objects of a backed-up cluster, in the order they depend on each other.
+# Apply with: kubectl apply -k . -n my-namespace
+# The restore examples (cluster-restore.yaml, cluster-restore-pitr.yaml) are applied on their own.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - externalsecret-s3-credentials.yaml
+  - objectstore.yaml
+  - cluster.yaml
+  - scheduledbackup.yaml

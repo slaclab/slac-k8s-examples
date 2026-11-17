@@ -1,0 +1,10 @@
+# Removes /my-app from the path, so the application receives /my-app/page as /page.
+# Traefik passes the removed prefix to the application in the X-Forwarded-Prefix header.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: strip-prefix
+spec:
+  stripPrefix:
+    prefixes:
+      - /my-app

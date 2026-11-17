@@ -1,0 +1,20 @@
+# A LoadBalancer that accepts clients from SLAC networks only.
+# Cilium checks the ranges for clients outside the cluster; traffic from inside the cluster is not checked.
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-app-lb-slac-only
+  annotations:
+    metallb.io/address-pool: sdf-services
+spec:
+  type: LoadBalancer
+  allocateLoadBalancerNodePorts: false
+  loadBalancerSourceRanges:
+    - 134.79.0.0/16   # SLAC's public addresses
+    - 172.16.0.0/12   # private addresses, including the S3DF and SLAC internal networks. Not 172.16.0.0/8
+  selector:
+    app: my-app
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

@@ -1,0 +1,32 @@
+# Vouch login (any slac.stanford.edu user, no group checks; for groups use an HTTPRoute), and
+# the app served under a path: https://my-app.slac.stanford.edu/my-app/<rest> reaches it as /<rest>.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: my-app
+  annotations:
+    # nginx asks Vouch about every request. Development login stack: vouch-dev.slac.stanford.edu,
+    # in this URL and in auth-signin.
+    nginx.ingress.kubernetes.io/auth-url: "https://vouch.slac.stanford.edu/validate"
+    # A browser without a session goes to the Vouch login, then back to the page it asked for.
+    nginx.ingress.kubernetes.io/auth-signin: "https://vouch.slac.stanford.edu/login?url=https://$http_host$request_uri"
+    # The only identity header the app may trust: nginx sets it from Vouch's answer and replaces
+    # any copy a client sends. Never add X-Vouch-IdP-AccessToken, -RefreshToken or -IdToken.
+    nginx.ingress.kubernetes.io/auth-response-headers: "X-Vouch-User"
+    # The path below is a regular expression, and $2 is what follows /my-app/.
+    # These two annotations make every path of this hostname, in every Ingress, a regular expression.
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: my-app.slac.stanford.edu
+      http:
+        paths:
+          - path: /my-app(/|$)(.*)
+            pathType: ImplementationSpecific   # a regular expression needs this type, not Prefix
+            backend:
+              service:
+                name: my-app
+                port:
+                  number: 8080

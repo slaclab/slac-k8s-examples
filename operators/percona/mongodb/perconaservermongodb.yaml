@@ -1,0 +1,51 @@
+# A three-member MongoDB replica set, my-app-mongodb, on the default Weka StorageClass, with one
+# application user. Apply it in the namespace where the operator runs.
+apiVersion: psmdb.percona.com/v1
+kind: PerconaServerMongoDB
+metadata:
+  name: my-app-mongodb
+  finalizers:
+    # Deletes the pods in order when you delete this object. The claims stay; see the README.
+    - percona.com/delete-psmdb-pods-in-order
+spec:
+  # The operator release this object is written for. Keep it equal to the installed operator.
+  crVersion: 1.23.1
+  # A full version tag that this operator release supports.
+  image: percona/percona-server-mongodb:8.0.32-14
+  # The operator never changes the MongoDB version by itself.
+  upgradeOptions:
+    apply: disabled
+  # Raise storage in volumeSpec to grow every member's claim; Weka allows expansion.
+  enableVolumeExpansion: true
+  secrets:
+    # The operator creates this Secret with generated passwords for its system users.
+    users: my-app-mongodb-users
+  users:
+    # The password is generated into Secret my-app-mongodb-custom-user-secret, key my-app.
+    - name: my-app
+      db: admin
+      roles:
+        - name: readWrite
+          db: my-app
+  replsets:
+    - name: rs0
+      size: 3
+      affinity:
+        antiAffinityTopologyKey: kubernetes.io/hostname
+      resources:
+        requests:
+          cpu: 500m
+          memory: 2Gi
+        limits:
+          cpu: "2"
+          memory: 2Gi
+      volumeSpec:
+        persistentVolumeClaim:
+          storageClassName: wekafs--sdf-k8s01
+          resources:
+            requests:
+              storage: 20Gi
+  sharding:
+    enabled: false
+  backup:
+    enabled: false

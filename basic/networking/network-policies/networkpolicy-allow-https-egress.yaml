@@ -1,0 +1,19 @@
+# Lets my-app open HTTPS connections to any address outside the cluster.
+# For an outgoing profile of `vcluster` or `isolated`, which outside the cluster allow only SLAC networks.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-my-app-https-egress
+spec:
+  podSelector:
+    matchLabels:
+      app: my-app
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - port: 443
+          protocol: TCP

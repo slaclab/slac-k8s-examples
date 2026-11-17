@@ -1,0 +1,11 @@
+# A client identity for the external listener of kafka-external.yaml. The user operator creates
+# the Secret my-app with the client certificate (user.crt, user.key, user.p12) and ca.crt.
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaUser
+metadata:
+  name: my-app
+  labels:
+    strimzi.io/cluster: my-kafka
+spec:
+  authentication:
+    type: tls

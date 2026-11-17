@@ -1,0 +1,14 @@
+# Scrapes the JMX exporters of the Kafka and Cruise Control pods of my-kafka (port tcp-prometheus,
+# 9404) with the platform Prometheus. Needs the Prometheus monitors switch on your vcluster.
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: my-kafka
+spec:
+  selector:
+    matchLabels:
+      strimzi.io/cluster: my-kafka
+      strimzi.io/kind: Kafka
+  podMetricsEndpoints:
+    - port: tcp-prometheus
+      path: /metrics

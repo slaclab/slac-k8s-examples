@@ -1,0 +1,9 @@
+# Restores my-app-mongodb from the backup my-app-mongodb-manual. It overwrites the data the
+# database holds now.
+apiVersion: psmdb.percona.com/v1
+kind: PerconaServerMongoDBRestore
+metadata:
+  name: my-app-mongodb-restore
+spec:
+  clusterName: my-app-mongodb
+  backupName: my-app-mongodb-manual

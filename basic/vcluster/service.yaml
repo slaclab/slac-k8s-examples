@@ -1,0 +1,14 @@
+# In your vcluster: my-app.my-namespace.svc.cluster.local.
+# On the host cluster: my-app-x-my-namespace-x-vcluster--<name>, in namespace vcluster--<name>.
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-app
+spec:
+  type: ClusterIP
+  selector:
+    app: my-app
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

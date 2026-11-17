@@ -1,0 +1,14 @@
+# The Service in front of deployment-ha.yaml. It sends traffic only to replicas whose
+# readiness probe passes, so a replica that is starting or stopping gets none.
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-app
+spec:
+  type: ClusterIP
+  selector:
+    app: my-app
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

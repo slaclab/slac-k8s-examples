@@ -1,0 +1,40 @@
+# An application that connects to the cluster from cluster.yaml through the Service my-db-rw,
+# reading the connection URI from the Secret the operator keeps for the application user.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+        - name: psql
+          image: ghcr.io/cloudnative-pg/postgresql:17.5
+          # Stands in for your application: prints the server version every minute.
+          command:
+            - /bin/sh
+            - -c
+            - |
+              while true; do psql "$DATABASE_URL" -c 'select version()'; sleep 60; done
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  # <cluster>-app: the operator writes host, port, dbname, username, password,
+                  # uri, jdbc-uri and pgpass into it. The uri points at my-db-rw, the primary.
+                  name: my-db-app
+                  key: uri
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi

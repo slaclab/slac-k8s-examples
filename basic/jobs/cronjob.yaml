@@ -1,0 +1,80 @@
+# A nightly CronJob: a fixed time zone, no overlapping runs, and history limits. Each run writes
+# its output and log to the claim in pvc.yaml, in a directory named after the run's Job.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: my-app-nightly
+spec:
+  schedule: "15 4 * * *"
+  # Without timeZone, the schedule follows the time zone of the vcluster's controller manager.
+  timeZone: America/Los_Angeles
+  concurrencyPolicy: Forbid
+  # A run that cannot start within 10 minutes of its time, for example because the previous run
+  # is still going, is skipped, not started later.
+  startingDeadlineSeconds: 600
+  # These keep Job objects and their status, not pods: the platform deletes the pods anyway.
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 3600
+      template:
+        metadata:
+          labels:
+            app: my-app
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: my-app-nightly
+              image: busybox:1.37.0
+              env:
+                # my-app-nightly-<number>: a new name, and a new directory, for every run.
+                - name: JOB_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.labels['batch.kubernetes.io/job-name']
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+              command:
+                - sh
+                - -c
+                - |
+                  set -eu
+                  out="/results/$JOB_NAME"
+                  mkdir -p "$out"
+                  {
+                    echo "$(date -u) started in $POD_NAME"
+                    # The real work goes here. This example records how much of the claim is in use.
+                    du -sh /results > "$out/result.txt"
+                    # The claim's size is a hard quota: remove the output of runs older than 30 days.
+                    find /results -maxdepth 1 -type d -name 'my-app-nightly-*' -mtime +30 -exec rm -rf {} \;
+                    echo "$(date -u) finished"
+                  } > "$out/$POD_NAME.log" 2>&1
+                  echo "result: $(cat "$out/result.txt")"
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: [ALL]
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 64Mi
+                limits:
+                  cpu: 500m
+                  memory: 128Mi
+              volumeMounts:
+                - name: results
+                  mountPath: /results
+          volumes:
+            - name: results
+              persistentVolumeClaim:
+                claimName: my-app-results

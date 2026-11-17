@@ -1,0 +1,32 @@
+# Scales my-app between 2 and 10 replicas to keep average CPU use at 70% of the CPU requests.
+# This is the common case: a stateless web application whose load varies.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: my-app
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: my-app
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          # Percent of the sum of the pod's CPU requests. With requests of 100m, the HPA adds
+          # replicas when the pods average more than 70m each.
+          averageUtilization: 70
+  behavior:
+    scaleDown:
+      # Wait 10 minutes of lower load before removing replicas (the default is 5), so a short
+      # dip does not take pods away and a short burst does not keep adding and removing them.
+      stabilizationWindowSeconds: 600
+      policies:
+        # Remove at most one replica per minute.
+        - type: Pods
+          value: 1
+          periodSeconds: 60

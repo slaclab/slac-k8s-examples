@@ -1,0 +1,25 @@
+# Extra CoreDNS server blocks for your vcluster. The name and namespace are fixed: CoreDNS reads
+# only coredns-custom in kube-system. Keep the keys you need, then restart CoreDNS (see README).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coredns-custom
+  namespace: kube-system
+data:
+  # my-app.slac.stanford.edu, looked up from inside the vcluster, returns the ClusterIP of the
+  # Service my-app in my-namespace. Lookups from outside the vcluster are not affected.
+  my-app-internal.server: |
+    my-app.slac.stanford.edu:1053 {
+        errors
+        rewrite name exact my-app.slac.stanford.edu my-app.my-namespace.svc.cluster.local
+        kubernetes cluster.local
+        cache 30
+    }
+  # Names under the zone my-zone.example.org are sent to the resolver 192.0.2.53, a
+  # documentation address. Ask whoever runs the zone for the real resolver address.
+  my-zone.server: |
+    my-zone.example.org:1053 {
+        errors
+        forward . 192.0.2.53
+        cache 30
+    }

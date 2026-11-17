@@ -1,7 +1,4 @@
 SECRET_PATH=secret/tid/template-app
-CNPG_VERSION ?= 1.18
-PERCONA_MONGODB_VERSION ?= v1.13.0
-PERCONA_MONGODB_NAMESPACE=percona-mongodb
 
 get-vault-secrets:
 	mkdir -p etc/.secrets
@@ -10,15 +7,15 @@ get-vault-secrets:
 clean-secrets:
 	rm -rf etc/.secrets/
 
+# Installs the pinned CloudNativePG release into your vcluster; see operators/cloudnativepg/README.md.
+# Pass KUBECTL_DEPLOY_CONTEXT=<your vcluster context>: the target refuses to run against any other context.
 cnpg-operator:
-	curl -L https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/release-$(CNPG_VERSION)/releases/cnpg-$(CNPG_VERSION).0.yaml > operators/cloudnativepg/cnpg-operator.yaml
-	kubectl apply -f operators/cloudnativepg/cnpg-operator.yaml
+	$(MAKE) -C operators/cloudnativepg resource apply
 
+# Installs the pinned Percona Operator for MongoDB and a database into one namespace of your vcluster;
+# see operators/percona/README.md. Pass NAMESPACE=<namespace> and KUBECTL_DEPLOY_CONTEXT=<your vcluster context>.
 percona-mongodb-operator:
-	curl -L https://raw.githubusercontent.com/percona/percona-server-mongodb-operator/$(PERCONA_MONGODB_VERSION)/deploy/bundle.yaml > operators/percona/mongodb/bundle.yaml
-	curl -L https://raw.githubusercontent.com/percona/percona-server-mongodb-operator/$(PERCONA_MONGODB_VERSION)/deploy/cr-minimal.yaml > operators/percona/mongodb/cr-minimal.yaml
-	kubectl create -f operators/percona/mongodb/ns.yaml
-	kubectl -n $(PERCONA_MONGODB_NAMESPACE) apply -f operators/percona/mongodb
+	$(MAKE) -C operators/percona/mongodb apply
 
 mysql-operator:
 	curl -L "https://raw.githubusercontent.com/mysql/mysql-operator/trunk/deploy/deploy-crds.yaml" > operators/mysql/deploy-crds.yaml

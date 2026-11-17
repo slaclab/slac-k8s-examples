@@ -1,0 +1,58 @@
+# A StatefulSet whose replicas each get their own Weka volume from volumeClaimTemplates:
+# claims data-my-app-db-0 and data-my-app-db-1, 10Gi each.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: my-app-db
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: my-app-db
+  # Retain (the Kubernetes default) keeps the claims, and so the data, when the StatefulSet is
+  # deleted or scaled down. Delete removes them, and the Weka driver deletes the data with them.
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
+  template:
+    metadata:
+      labels:
+        app: my-app-db
+    spec:
+      # No fsGroup: the root of each Weka volume is mode 0777, so a non-root user can write to it.
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: my-app-db
+          image: busybox:1.37.0
+          command: [sh, -c, "hostname >> /data/owner.log && sleep infinity"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 32Mi
+          volumeMounts:
+            - name: data
+              mountPath: /data
+  # Kubernetes does not allow changes to this template after creation. To grow a replica's
+  # volume, raise the request on its claim (for example data-my-app-db-0) instead.
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        storageClassName: wekafs--sdf-k8s01
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 10Gi

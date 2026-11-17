@@ -1,0 +1,5 @@
+# The namespace the operator runs in.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mariadb-system

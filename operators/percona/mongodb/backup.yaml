@@ -1,0 +1,12 @@
+# An on-demand backup of my-app-mongodb to the s3df storage of perconaservermongodb-backups.yaml.
+# Take one before an upgrade or before you delete the database.
+apiVersion: psmdb.percona.com/v1
+kind: PerconaServerMongoDBBackup
+metadata:
+  name: my-app-mongodb-manual
+  finalizers:
+    # Deletes the backup's files from the bucket when you delete this object.
+    - percona.com/delete-backup
+spec:
+  clusterName: my-app-mongodb
+  storageName: s3df

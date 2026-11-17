@@ -1,0 +1,74 @@
+# A replicated stateful workload: three replicas, never two on one node, each with its own Weka
+# volume. Replace the container with your application, which must copy its data between replicas.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: my-app-db
+spec:
+  serviceName: my-app-db
+  replicas: 3
+  # A replica stuck on a failed node does not hold up the replacement of the others.
+  # Set it when you create the StatefulSet: it cannot be changed later.
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      app: my-app-db
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
+  template:
+    metadata:
+      labels:
+        app: my-app-db
+    spec:
+      affinity:
+        podAntiAffinity:
+          # One replica per node, so a drain or a node failure stops one replica, not two.
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: my-app-db
+              topologyKey: kubernetes.io/hostname
+      # No tolerations: a replica on a failed node must be free to leave it.
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: my-app-db
+          image: busybox:1.37.0
+          # Stops cleanly on SIGTERM instead of waiting to be killed.
+          command: [sh, -c, "trap 'exit 0' TERM; hostname > /data/owner; while true; do sleep 1; done"]
+          readinessProbe:
+            exec:
+              command: [cat, /data/owner]
+            periodSeconds: 5
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 32Mi
+          volumeMounts:
+            - name: data
+              mountPath: /data
+  # One claim per replica: data-my-app-db-0, -1 and -2. Weka volumes mount on any node with the
+  # Weka client, so a replica that moves keeps its data.
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        storageClassName: wekafs--sdf-k8s01
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi

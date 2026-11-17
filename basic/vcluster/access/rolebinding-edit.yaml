@@ -1,0 +1,19 @@
+# Two teammates who deploy and manage workloads in one namespace (built-in ClusterRole "edit").
+# Apply with -n <namespace>: a RoleBinding grants access only in its own namespace.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: my-team-edit
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: edit
+subjects:
+  # The username is the full SLAC email address from the login, domain included.
+  # Group subjects match nobody: the login carries no group memberships.
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: my-colleague@slac.stanford.edu
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: my-other-colleague@slac.stanford.edu

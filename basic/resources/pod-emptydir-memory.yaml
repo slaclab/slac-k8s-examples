@@ -1,0 +1,28 @@
+# Scratch space in memory: a Memory emptyDir (tmpfs) with sizeLimit.
+# Its files count against the container's memory limit, so the limit leaves room for them.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-app-tmpfs
+spec:
+  restartPolicy: Never
+  containers:
+    - name: worker
+      image: busybox:1.37.0
+      command: [sh, -c, "dd if=/dev/zero of=/cache/data bs=1M count=100 && df -h /cache && sleep 3600"]
+      resources:
+        requests:
+          cpu: 100m
+          # The process's own use (64Mi) plus the full sizeLimit of /cache (256Mi).
+          memory: 320Mi
+        limits:
+          memory: 320Mi
+      volumeMounts:
+        - name: cache
+          mountPath: /cache
+  volumes:
+    - name: cache
+      emptyDir:
+        medium: Memory
+        # The tmpfs size: a write beyond it fails with "No space left on device".
+        sizeLimit: 256Mi

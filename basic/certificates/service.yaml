@@ -1,0 +1,12 @@
+# The Service my-app. Its names are the dnsNames in certificate-server.yaml.
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-app
+spec:
+  selector:
+    app: my-app
+  ports:
+    - name: https
+      port: 443
+      targetPort: https

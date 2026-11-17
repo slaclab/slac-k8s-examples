@@ -1,2 +1,3 @@
 *.swp
-*etc/.secrets/*
+# Secrets that Makefiles fetch from Vault, in any directory. Never commit them.
+**/etc/.secrets/

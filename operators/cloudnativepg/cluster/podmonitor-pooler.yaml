@@ -1,0 +1,12 @@
+# Scrapes the PgBouncer exporter of pooler-rw.yaml (port metrics, 9127): pool sizes, waiting
+# clients, server connections. Needs the Prometheus monitors switch on your vcluster.
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: my-db-pooler-rw
+spec:
+  selector:
+    matchLabels:
+      cnpg.io/poolerName: my-db-pooler-rw
+  podMetricsEndpoints:
+    - port: metrics

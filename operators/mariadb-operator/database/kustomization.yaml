@@ -1,26 +1,29 @@
+# MariaDB my-db with its database, application user, grant and nightly backup.
+# Run it with make apply: kustomize needs the files that the Makefile writes to etc/.secrets/.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
 resources:
-- ns.yaml
-- database-resource.yaml
-- mariadb.yaml
-- users.yaml
-- backup.yaml
-- grant.yaml
+  - mariadb.yaml
+  - database.yaml
+  - user.yaml
+  - grant.yaml
+  - backup.yaml
+
+# The operator reads these Secrets by name, and kustomize does not rewrite names inside custom
+# resources, so the names must stay fixed: no hash suffix.
+generatorOptions:
+  disableNameSuffixHash: true
 
 secretGenerator:
-- name: name-secret-users
-  options:
-    disableNameSuffixHash: true
-  files:
-  - etc/.secrets/user_password
-  - etc/.secrets/root_password
-  - etc/.secrets/monitoring_password
-  - etc/.secrets/other_password
-
-- name: name-secret-s3
-  options:
-    disableNameSuffixHash: true
-  files:
-  - etc/.secrets/access_key
-  - etc/.secrets/secret_key
-
-namespace: prod
+  - name: my-db-users
+    type: Opaque
+    files:
+      - etc/.secrets/root_password
+      - etc/.secrets/user_password
+      - etc/.secrets/monitoring_password
+  - name: my-db-s3
+    type: Opaque
+    files:
+      - etc/.secrets/access_key
+      - etc/.secrets/secret_key

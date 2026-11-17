@@ -1,0 +1,14 @@
+# Binds the Role my-app-operator (role-app-operator.yaml) to one teammate.
+# Apply with -n <namespace>, in the same namespace as the Role.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: my-colleague-my-app-operator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: my-app-operator
+subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: my-colleague@slac.stanford.edu

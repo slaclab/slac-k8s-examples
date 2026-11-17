@@ -1,0 +1,77 @@
+# Three replicas, each with its own ZFS volume, on three different nodes of the node pool.
+# Each volume has one copy on one node: a real application must copy its data between replicas.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: my-app
+spec:
+  serviceName: my-app
+  replicas: 3
+  selector:
+    matchLabels:
+      app: my-app
+  # Retain (the Kubernetes default) keeps the claims when the StatefulSet is deleted or scaled
+  # down, so a replica that comes back finds its data. Delete would destroy the datasets.
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
+  template:
+    metadata:
+      labels:
+        app: my-app
+      # If your node pool uses an annotation for its toleration, add it here (see README).
+    spec:
+      affinity:
+        podAntiAffinity:
+          # One replica per node, so losing a node loses one copy, not several.
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: my-app
+              topologyKey: kubernetes.io/hostname
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        # The kubelet gives this group ownership of each volume, so the non-root user can write to it.
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: my-app
+          image: busybox:1.37.0
+          # Records when the volume was first used, then serves /data on port 8080.
+          command: [sh, -c, "[ -f /data/created ] || date > /data/created; exec httpd -f -p 8080 -h /data"]
+          ports:
+            - name: http
+              containerPort: 8080
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests:
+              cpu: 50m
+              memory: 32Mi
+              ephemeral-storage: 16Mi
+            limits:
+              cpu: 200m
+              memory: 64Mi
+              ephemeral-storage: 64Mi
+          volumeMounts:
+            - name: data
+              mountPath: /data
+  # One claim per replica: data-my-app-0, data-my-app-1, data-my-app-2.
+  # Each stays on the node of its first pod. Deleting one destroys its data.
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        # Placeholder: use the class the platform team gave your vcluster.
+        storageClassName: zfs--my-app
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 10Gi

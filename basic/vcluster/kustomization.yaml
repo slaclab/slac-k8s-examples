@@ -1,0 +1,10 @@
+# The entry point of an application in a vcluster: one namespace and the objects in it.
+# Apply from inside your vcluster with: kubectl apply -k .
+# Sets metadata.namespace on every object, so no manifest falls back to the default namespace.
+namespace: my-namespace
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - deployment.yaml
+  - service.yaml

@@ -1,0 +1,16 @@
+# A claim for a new, empty ZFS dataset on one node of your node pool.
+# Stays Pending until a pod uses it (WaitForFirstConsumer), then stays on that pod's node.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: my-app-data
+spec:
+  # Placeholder: use the class the platform team gave your vcluster.
+  storageClassName: zfs--my-app
+  # The only mode the driver supports: the volume is on one node.
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      # The dataset's ZFS quota. It must fit in one node's free pool space.
+      storage: 10Gi
