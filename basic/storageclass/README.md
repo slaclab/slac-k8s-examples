@@ -31,6 +31,31 @@ The PV carries a node affinity on a storage label that the platform keeps on the
 S3DF storage, so the scheduler places your pods on those nodes. Don't add a `nodeSelector` or
 node affinity of your own for storage.
 
+## LPP v2
+
+The platform is moving the LPP classes to a new LPP build, v2, one class at a time; the LCLS
+classes `sdf-data-lcls` and `sdf-group-lcls` come first. Your claims and pods stay the same. For a
+class on v2:
+
+- **Placement follows the share.** A new PV's node affinity is the health label of its own share,
+  for example `edu.stanford.slac.sdf.storage/sdf-data-lcls`, which the platform keeps only on nodes
+  where that share is mounted and healthy. Before v2, every PV used one label shared by all S3DF
+  storage. An existing PV keeps its old affinity until its claim is re-created.
+- **Only `ReadWriteMany`.** v2 rejects any other access mode. The rejected claim stays `Pending`,
+  and your vcluster shows no reason, because the host's events for claims are not synced into it.
+- **Data is never touched.** Deleting a claim removes only the claim and its PV, as before.
+
+When a class moves to v2, the platform team asks owners of existing claims to re-create them during
+a short outage, so their PVs get the new affinity:
+
+1. Stop the pods that use the claim.
+2. Delete the claim: `kubectl delete pvc <claim> -n my-namespace`. The data on the share stays.
+3. Apply the claim again from your own manifest, with the same name, access mode and size.
+4. Start the pods again.
+
+Claims from a StatefulSet's `volumeClaimTemplates` are re-created by the StatefulSet when its pod
+restarts. A GitOps tool that re-creates a deleted claim by itself does step 3 for you.
+
 `hostPath` volumes are forbidden in tenant namespaces, so a claim in a class on your vcluster's
 allowlist is the supported way to reach a share. This lets the platform decide which vcluster can
 reach which facility's data. Ask the platform team (s3df-help) which classes your vcluster may
@@ -94,10 +119,13 @@ deleted PV.
 | [`pod.yaml`](pod.yaml) | A pod with the whole share, read-write |
 | [`pod-read-only.yaml`](pod-read-only.yaml) | nginx serving one directory of the share, read-only |
 | [`deployment-subpath.yaml`](deployment-subpath.yaml) | A Deployment whose replicas share one subdirectory, read-write |
+| [`pvc-sdf-data-lcls.yaml`](pvc-sdf-data-lcls.yaml) | A claim on `/sdf/data/lcls`, a class on LPP v2 |
+| [`pod-check-share.yaml`](pod-check-share.yaml) | A read-only pod that checks the share is mounted and prints its node; uses the claim from `pvc-sdf-data-lcls.yaml` |
 
 The manifests set no namespace. Apply them to a namespace of your own with `-n`: platform policy
 forbids the vcluster's `default` namespace, and [Your vcluster](../../vcluster/README.md) shows how
-to create one. The pods in all three workload examples use the claim from `pvc.yaml`.
+to create one. The pods in `pod.yaml`, `pod-read-only.yaml` and `deployment-subpath.yaml` use the
+claim from `pvc.yaml`.
 
 ```bash
 kubectl apply -n my-namespace -f pvc.yaml -f pod.yaml
@@ -116,7 +144,7 @@ minutes after they are created, so read the log soon; see
 
 | Mistake | Result |
 |---|---|
-| `ReadWriteOnce` or `ReadWriteOncePod` | Not supported. Some classes reject the claim today; others bind it to the whole share, so a workload that expects a private, empty volume gets facility data |
+| `ReadWriteOnce` or `ReadWriteOncePod` | Not supported. Classes on LPP v2 reject the claim, which stays `Pending` with no reason shown in your vcluster |
 | `ReadOnlyMany` to get read-only access | Not supported. The access mode does not stop a pod from writing to the share; only `readOnly: true` on the volumeMount does |
 | `sdf-home` or `sdf-scratch` mounted at the root, read-write | The pod can write to any user's files that the file permissions allow. Mount only the directory you need with `subPath`, and add `readOnly: true` if the pod only reads |
 | A `nodeSelector` or node affinity for storage | Not needed: the PV already places the pod. A selector that matches no node with the storage label leaves the pod `Pending` |
@@ -124,6 +152,7 @@ minutes after they are created, so read the log soon; see
 | Changing the reclaim policy of the PV, or patching it in any other way | `Recycle` makes Kubernetes delete the share's contents when the claim is released. Never set it, and don't edit LPP PVs |
 | A class that is not on your vcluster's allowlist | The host cluster (Kyverno) rejects the synced claim, so it never binds. Ask the platform team (s3df-help) |
 | No pod uses the claim | The claim stays `Pending`. This is expected |
+| Re-creating a claim from `kubectl get pvc -o yaml` output | It carries the old PV's name and binding annotations, so it never binds. Apply your own manifest |
 
 A new pod's first scheduling attempt can fail before it starts: if the scheduler first picks a
 node without the storage label, the pod is placed again, on a node that has it.
@@ -138,9 +167,17 @@ kubectl get storageclass
 kubectl get pv "$(kubectl get pvc task-pv-claim -n my-namespace -o jsonpath='{.spec.volumeName}')" \
   -o jsonpath='{.spec.hostPath.path}{"\n"}'
 
-# Why a claim or a pod is waiting: read the events at the end.
-kubectl describe pvc task-pv-claim -n my-namespace
+# Why a pod is waiting: read the events at the end. A claim's provisioning errors are not shown
+# in your vcluster: a claim that stays Pending while its pod is scheduled needs the platform team.
 kubectl describe pod task-pv-pod -n my-namespace
+
+# On LPP v2: the PV's node affinity names the share's own label.
+kubectl get pv "$(kubectl get pvc lcls-data -n my-namespace -o jsonpath='{.spec.volumeName}')" \
+  -o jsonpath='{.spec.nodeAffinity.required.nodeSelectorTerms[0].matchExpressions[0].key}{"\n"}'
+
+# Check a claim end to end: the pod prints SHARE_OK and its node, then exits.
+kubectl apply -n my-namespace -f pvc-sdf-data-lcls.yaml -f pod-check-share.yaml
+kubectl logs lcls-data-check -n my-namespace
 ```
 
 A pod that stays in `ContainerCreating` with a `FailedMount` event naming the share root runs on a

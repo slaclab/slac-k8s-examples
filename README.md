@@ -43,7 +43,7 @@ platform team sets for your vcluster.
 |---|---|
 | [Choosing a StorageClass](basic/storage/README.md) | The storage families, the per-vcluster allowlist, what is and is not backed up |
 | [Weka volumes](basic/storage/weka/README.md) | New, empty persistent volumes for your application (the default class) |
-| [S3DF filesystems](basic/storage/sdf-filesystem/README.md) | Mounting an existing facility share such as `/sdf/group/<facility>` |
+| [S3DF filesystems (Local Path Provisioner, LPP)](basic/storage/sdf-filesystem/README.md) | Mounting an existing facility share such as `/sdf/group/<facility>`, including LPP v2 |
 | [Node-local ZFS volumes](basic/storage/node-local-zfs/README.md) | Fast volumes on dedicated node pools, and their trade-offs |
 
 ### Secrets and certificates

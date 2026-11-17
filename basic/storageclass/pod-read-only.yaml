@@ -1,4 +1,4 @@
-# Read-only: nginx serves one directory of the share, /sdf/group/ad/www.
+# Read-only: nginx serves one directory of the share, /sdf/data/lcls/www.
 # readOnly on the volumeMount is what stops writes; the claim stays ReadWriteMany.
 apiVersion: v1
 kind: Pod
@@ -27,4 +27,4 @@ spec:
   volumes:
     - name: task-pv-storage
       persistentVolumeClaim:
-        claimName: task-pv-claim
+        claimName: lcls-data

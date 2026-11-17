@@ -1,0 +1,26 @@
+# Reference only: the configuration of the LPP instance behind sdf-data-lcls, in the host cluster's
+# local-path-storage namespace. Platform-owned; don't apply this.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sdf-data-lcls
+  namespace: local-path-storage
+data:
+  # sharedFileSystemPath: every PV of the class points at this existing share root.
+  # nodeAffinityKey: every PV requires this node label, which the platform keeps only on nodes
+  # where the share is mounted and healthy.
+  config.json: |-
+    {
+      "sharedFileSystemPath": "/sdf/data/lcls",
+      "nodeAffinityKey": "edu.stanford.slac.sdf.storage/sdf-data-lcls"
+    }
+  # LPP runs these when it creates and reclaims a PV. They do nothing: the share already exists,
+  # and no data is removed.
+  setup: |-
+    #!/bin/sh
+    set -eu
+    echo "nothing to do"
+  teardown: |-
+    #!/bin/sh
+    set -eu
+    echo "nothing to do"

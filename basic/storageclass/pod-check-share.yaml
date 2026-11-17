@@ -1,0 +1,33 @@
+# Checks a claim: mounts the share read-only and prints the node it ran on. No node selector:
+# the PV places the pod. Nothing is written to the share.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: lcls-data-check
+spec:
+  restartPolicy: Never
+  automountServiceAccountToken: false
+  containers:
+    - name: check
+      image: busybox:1.37.0
+      command: [sh, -c, 'set -eu; test -d /data; ls /data | head -5; echo "SHARE_OK node=$NODE_NAME"']
+      env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+      resources:
+        requests:
+          cpu: 10m
+          memory: 16Mi
+        limits:
+          cpu: 100m
+          memory: 32Mi
+      volumeMounts:
+        - name: data
+          mountPath: /data
+          readOnly: true
+  volumes:
+    - name: data
+      persistentVolumeClaim:
+        claimName: lcls-data

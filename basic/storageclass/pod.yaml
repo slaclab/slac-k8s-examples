@@ -1,4 +1,4 @@
-# Read-write: the whole share, /sdf/group/ad, appears at /data.
+# Read-write: the whole share, /sdf/data/lcls, appears at /data.
 # No nodeSelector or node affinity for storage: the PV places the pod.
 apiVersion: v1
 kind: Pod
@@ -23,4 +23,4 @@ spec:
   volumes:
     - name: task-pv-storage
       persistentVolumeClaim:
-        claimName: task-pv-claim
+        claimName: lcls-data
